@@ -1,0 +1,169 @@
+<!-- src/app/home/home.component.html -->
+<div class="min-h-screen bg-gray-950 text-white">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 w-full bg-gray-950/90 backdrop-blur-sm z-50 border-b border-gray-800">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center font-bold text-xl" aria-hidden="true">
+          C
+        </div>
+        <span class="text-2xl font-bold">ConstructPro</span>
+      </div>
+      <div class="hidden md:flex items-center gap-8">
+        <a routerLink="/home" class="hover:text-purple-400 transition">Home</a>
+        <a routerLink="/about" class="hover:text-purple-400 transition">About</a>
+        <a routerLink="/contact" class="hover:text-purple-400 transition">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="pt-24 pb-32 px-6">
+    <div class="max-w-7xl mx-auto text-center">
+      <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+        Professional Construction<br />
+        <span class="text-purple-400">Services, On Demand</span>
+      </h1>
+      <p class="text-xl text-gray-400 mb-10 max-w-3xl mx-auto">
+        Get instant access to verified electricians, plumbers, painters, carpenters and more.
+        Book trusted professionals in minutes!
+      </p>
+      <a [routerLink]="['/customer/booking/new']"
+         class="inline-block bg-purple-500 hover:bg-purple-400 text-black font-bold text-xl px-10 py-5 rounded-full transition transform hover:scale-105 shadow-2xl">
+        Book Your Service Now
+      </a>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="py-20 px-6 bg-gray-900/50">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-4">Our Services</h2>
+      <p class="text-gray-400 text-center mb-16">Choose from 50+ professional services</p>
+
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <!-- FIXED: call a real method instead of using a comment + null -->
+        <button *ngFor="let service of services"
+                (click)="onCategoryClick(service)"
+                class="bg-gray-800 p-8 rounded-2xl text-center hover-bg-gray-750 transform hover:-translate-y-2 focus:outline-none"
+                type="button">
+          <div class="w-20 h-20 bg-purple-500/20 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl" aria-hidden="true">
+            <span class="icon">{{ service.icon || '🔧' }}</span>
+          </div>
+          <h3 class="text-xl font-bold mb-2">{{ service.title }}</h3>
+          <p class="text-gray-400 text-sm">{{ service.desc }}</p>
+        </button>
+      </div>
+
+      <!-- Services for selected category -->
+      <div *ngIf="selectedCategory" class="mt-12">
+        <h3 class="text-2xl font-bold mb-6">{{ selectedCategory.title }} Services</h3>
+
+        <div *ngIf="loadingServices" class="text-gray-400 mb-4">Loading services...</div>
+        <div *ngIf="!loadingServices && servicesForCategory.length === 0" class="text-gray-400 mb-4">No services found.</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div *ngFor="let s of servicesForCategory" class="service-card">
+            <div class="svc-header">
+              <div class="svc-title">{{ s.serviceName }}</div>
+              <div class="svc-rate">${{ s.fixedRate }}</div>
+            </div>
+            <div class="svc-desc">{{ s.shortDescription }}</div>
+            <div class="svc-actions">
+              <button class="btn-outline" (click)="viewServiceDetails(s)">Details</button>
+              <button class="btn-primary" (click)="bookService(s)">Book</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="py-20 px-6">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">How It Works</h2>
+      <div class="grid md:grid-cols-3 gap-12">
+        <div class="text-center">
+          <div class="w-20 h-20 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold">
+            1
+          </div>
+          <h3 class="text-2xl font-bold mb-4">Describe Your Project</h3>
+          <p class="text-gray-400">Tell us what you need - big or small job</p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold">
+            2
+          </div>
+          <h3 class="text-2xl font-bold mb-4">Get Matched</h3>
+          <p class="text-gray-400">We connect you with verified local pros</p>
+        </div>
+        <div class="text-center">
+          <div class="w-20 h-20 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl font-bold">
+            3
+          </div>
+          <h3 class="text-2xl font-bold mb-4">Job Done</h3>
+          <p class="text-gray-400">Professional arrives & completes your work</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-20 px-6 bg-gray-900/50">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">What Our Clients Say</h2>
+      <div class="grid md:grid-cols-2 gap-12">
+        <div *ngFor="let t of testimonials" class="bg-gray-800 p-8 rounded-2xl">
+          <div class="flex mb-4" aria-hidden="true">
+            <i class="fas fa-star text-yellow-400" *ngFor="let star of [1,2,3,4,5]"></i>
+          </div>
+          <p class="text-lg mb-6 italic">"{{ t.text }}"</p>
+          <p class="font-bold text-teal-400">- {{ t.name }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-950 border-t border-gray-800 py-12 px-6">
+    <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center font-bold text-xl">C</div>
+          <span class="text-2xl font-bold">ConstructPro</span>
+        </div>
+        <p class="text-gray-400">Your trusted partner for all construction needs</p>
+      </div>
+      <div>
+        <h4 class="font-bold mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-gray-400">
+          <li><a routerLink="/about" class="hover:text-teal-400">About Us</a></li>
+          <li><a routerLink="/services" class="hover:text-teal-400">Services</a></li>
+          <li><a routerLink="/contact" class="hover:text-teal-400">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-4">Legal</h4>
+        <ul class="space-y-2 text-gray-400">
+          <li><a routerLink="/privacy" class="hover:text-teal-400">Privacy Policy</a></li>
+          <li><a routerLink="/terms" class="hover:text-teal-400">Terms of Service</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-4">Follow Us</h4>
+        <div class="flex gap-4 text-2xl">
+          <a href="#" aria-label="Facebook" class="hover:text-teal-400"><i class="fab fa-facebook"></i></a>
+          <a href="#" aria-label="Instagram" class="hover:text-teal-400"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Twitter" class="hover:text-teal-400"><i class="fab fa-twitter"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center text-gray-500 mt-12">
+      © 2025 ConstructPro. All rights reserved.
+    </div>
+  </footer>
+</div>

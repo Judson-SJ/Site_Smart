@@ -1,0 +1,19 @@
+:host { display:block; background:#061226; color:#eef6ff; min-height:100vh; padding:24px; }
+.container { max-width:1100px; margin:0 auto; }
+.back { background:transparent; border:none; color:#9fb0c9; margin-bottom:12px; cursor:pointer; }
+h1 { font-size:28px; margin-bottom:12px; }
+
+.grid { display:grid; gap:16px; grid-template-columns: 1fr; }
+@media(min-width:768px){ .grid { grid-template-columns: repeat(3,1fr); } }
+
+.card { background:#0f1724; border-radius:10px; padding:14px; border:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column; }
+.card-body h3 { margin:0 0 6px; }
+.desc { color:#9fb0c9; font-size:14px; min-height:36px; }
+.meta { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+.price { color:#d7c7ff; font-weight:700; }
+.actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+.btn { padding:8px 10px; border-radius:8px; cursor:pointer; }
+.btn.outline { background:transparent; border:1px solid rgba(255,255,255,0.06); color:#dbe9ff; }
+.btn.primary { background:#7c3aed; color:white; border:none; }
+.muted { color:#9fb0c9; }
+.error { color:#ffd7d7; background: rgba(220,38,38,0.06); padding:10px; border-radius:6px; margin-top:12px; }

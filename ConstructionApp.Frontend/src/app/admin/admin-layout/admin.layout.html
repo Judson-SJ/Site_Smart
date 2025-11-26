@@ -1,0 +1,87 @@
+<!-- src/app/admin/layout/admin-layout.component.html -->
+<div class="flex h-screen bg-gray-950 text-gray-100">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+    <!-- Logo -->
+    <div class="p-6 border-b border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-teal-400 to-cyan-600 rounded-lg flex items-center justify-center font-bold text-xl text-white">
+          C
+        </div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+          ConstructPro
+        </h1>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-4 py-6 space-y-1">
+      <a routerLink="/admin/dashboard"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="layout-dashboard" class="icon"></i-lucide>
+        <span>Dashboard</span>
+      </a>
+
+      <a routerLink="/admin/manage/users"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="users" class="icon"></i-lucide>
+        <span>Users</span>
+      </a>
+
+      <a routerLink="/admin/service"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="wrench" class="icon"></i-lucide>
+        <span>Services</span>
+      </a>
+
+      <a routerLink="/admin/booking"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="calendar-check" class="icon"></i-lucide>
+        <span>Bookings</span>
+      </a>
+
+      <a routerLink="/admin/financials"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="dollar-sign" class="icon"></i-lucide>
+        <span>Financials</span>
+      </a>
+
+      <a routerLink="/admin/notifications"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="bell" class="icon"></i-lucide>
+        <span>Notifications</span>
+      </a>
+
+      <a routerLink="/admin/audit"
+         routerLinkActive="active"
+         class="nav-link group">
+        <i-lucide name="history" class="icon"></i-lucide>
+        <span>Audit Log</span>
+      </a>
+    </nav>
+
+    <!-- Profile -->
+    <div class="p-6 border-t border-gray-800">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-600 rounded-full flex items-center justify-center font-bold text-xl text-white">
+          SA
+        </div>
+        <div>
+          <p class="font-semibold text-white">Super Admin</p>
+          <p class="text-xs text-gray-400">sitesmart025@gmail.com</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto">
+    <router-outlet></router-outlet>
+  </main>
+</div>

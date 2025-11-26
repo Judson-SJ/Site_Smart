@@ -1,0 +1,16 @@
+/* src/app/home/home.component.css */
+
+/* Hover Background (equivalent to Tailwind hover:bg-gray-750) */
+.hover-bg-gray-750:hover {
+  background-color: #1f2937; /* Dark gray */
+}
+
+/* Smooth transform animation */
+.transform {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Deep shadow (Tailwind shadow-2xl equivalent) */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+}

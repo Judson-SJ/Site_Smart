@@ -1,0 +1,339 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1>Services &amp; Pricing</h1>
+      <p>Manage all construction services and their pricing</p>
+    </div>
+
+    <button
+      *ngIf="activeTab === 'services'"
+      class="btn-primary"
+      (click)="openCreateModal()">
+      Add New Service
+    </button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button
+      class="tab"
+      [class.active]="activeTab === 'services'"
+      (click)="setTab('services')">
+      Services
+    </button>
+
+    <button
+      class="tab"
+      [class.active]="activeTab === 'categories'"
+      (click)="setTab('categories')">
+      Categories
+    </button>
+  </div>
+
+  <!-- ========= SERVICES TAB ========= -->
+  <ng-container *ngIf="activeTab === 'services'">
+    <div class="card">
+      <div class="card-header">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search services by name..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyServiceFilter()"
+        />
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <!-- GRID VIEW -->
+      <div class="grid-wrapper" *ngIf="!isLoading; else loadingTpl">
+        <ng-container *ngIf="pagedServices.length; else noDataTpl">
+          <div class="services-grid">
+            <div class="service-card" *ngFor="let s of pagedServices">
+              <div class="service-image-wrapper">
+                <img
+                  *ngIf="s.imageUrl"
+                  [src]="getServiceImageUrl(s)"
+                  alt="{{ s.serviceName }}"
+                  class="service-image"
+                />
+                <div *ngIf="!s.imageUrl" class="placeholder-image">
+                  <span>{{ s.serviceName | slice:0:1 }}</span>
+                </div>
+                <span class="category-pill">
+                  {{ s.categoryName }}
+                </span>
+              </div>
+
+              <div class="service-body">
+                <h3 class="service-title">{{ s.serviceName }}</h3>
+                <p class="service-desc">
+                  {{ s.description || 'No description provided for this service.' }}
+                </p>
+              </div>
+
+              <div class="service-footer">
+                <div class="service-meta">
+                  <div class="meta-item">
+                    <span class="meta-label">Fixed Price</span>
+                    <span class="meta-value">{{ formatPrice(s.fixedRate) }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Duration</span>
+                    <span class="meta-value">{{ s.estimatedDuration }} hrs</span>
+                  </div>
+                </div>
+                <div class="service-actions">
+                  <button class="btn-ghost small" (click)="openEditModal(s)">
+                    Edit
+                  </button>
+                  <button
+                    class="btn-ghost danger small"
+                    (click)="deleteService(s)"
+                    [disabled]="deletingId === s.serviceID">
+                    <span *ngIf="deletingId !== s.serviceID">Delete</span>
+                    <span *ngIf="deletingId === s.serviceID">...</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <ng-template #loadingTpl>
+        <div class="loading">Loading services...</div>
+      </ng-template>
+
+      <ng-template #noDataTpl>
+        <div class="empty-state">
+          No services found. Click <strong>Add New Service</strong> to create
+          one.
+        </div>
+      </ng-template>
+
+      <!-- pagination -->
+      <div class="card-footer" *ngIf="filteredServices.length > pageSize">
+        <div class="pagination">
+          <button
+            class="page-btn"
+            [disabled]="currentPage === 1"
+            (click)="changePage(currentPage - 1)">
+            ‹
+          </button>
+
+          <button
+            *ngFor="let p of pages"
+            class="page-btn"
+            [class.active]="p === currentPage"
+            (click)="changePage(p)">
+            {{ p }}
+          </button>
+
+          <button
+            class="page-btn"
+            [disabled]="currentPage === totalPages"
+            (click)="changePage(currentPage + 1)">
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ========= CATEGORIES TAB ========= -->
+  <ng-container *ngIf="activeTab === 'categories'">
+    <div class="card">
+      <div
+        class="card-header"
+        style="display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0;">Categories</h3>
+
+        <button class="btn-primary" (click)="openCategoryForm()" *ngIf="!showCategoryForm">
+          Add Category
+        </button>
+        <button class="btn-secondary" (click)="cancelCategoryForm()" *ngIf="showCategoryForm">
+          Cancel
+        </button>
+      </div>
+
+      <!-- Categories table -->
+      <div class="table-wrapper">
+        <table
+          class="services-table"
+          *ngIf="categories.length; else noCatsTpl">
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of categories">
+              <td>{{ c.categoryName }}</td>
+              <td>{{ c.description || '-' }}</td>
+              <td>
+                <span class="muted">
+                  {{ c.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="actions-col">
+                <button class="btn-ghost small" (click)="openEditCategory(c)">Edit</button>
+                <button class="btn-ghost danger small" (click)="deleteCategory(c)"
+                        [disabled]="categoryDeletingId === c.categoryID">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noCatsTpl>
+        <div class="empty-state">
+          No categories found. Click <strong>Add Category</strong> to create one.
+        </div>
+      </ng-template>
+    </div>
+  </ng-container>
+
+  <!-- Category form modal-like area -->
+  <div class="modal-backdrop" *ngIf="showCategoryForm">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>{{ editingCategoryId ? 'Edit Category' : 'Add New Category' }}</h2>
+        <button class="close-btn" (click)="cancelCategoryForm()">X</button>
+      </div>
+
+      <form [formGroup]="categoryForm" (ngSubmit)="submitCategoryForm()">
+        <div class="modal-body">
+          <div class="form-row two-col">
+            <div>
+              <label>Category Name</label>
+              <input type="text" formControlName="categoryName"
+                     [class.invalid]="categoryForm.get('categoryName')?.invalid && categoryForm.get('categoryName')?.touched" />
+            </div>
+            <div>
+              <label>Status</label>
+              <select formControlName="isActive">
+                <option [ngValue]="true">Active</option>
+                <option [ngValue]="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Description</label>
+            <textarea formControlName="description" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="left-actions">
+            <button type="button" class="btn-secondary" (click)="cancelCategoryForm()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="isCategorySaving">
+              {{ editingCategoryId ? 'Save Changes' : 'Create Category' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========= SERVICE MODAL ========= -->
+  <div class="modal-backdrop" *ngIf="isModalOpen">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 *ngIf="!isEditMode">Add New Service</h2>
+        <h2 *ngIf="isEditMode">Edit Service</h2>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <form [formGroup]="serviceForm" (ngSubmit)="submitServiceForm()">
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Service Name</label>
+            <input
+              type="text"
+              formControlName="serviceName"
+              [class.invalid]="serviceForm.get('serviceName')?.invalid && serviceForm.get('serviceName')?.touched"
+            />
+            <div
+              class="validation-error"
+              *ngIf="serviceForm.get('serviceName')?.invalid && serviceForm.get('serviceName')?.touched">
+              Service name is required.
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Description</label>
+            <textarea formControlName="description" rows="3"></textarea>
+          </div>
+
+          <div class="form-row two-col">
+            <div>
+              <label>Fixed Price</label>
+              <input
+                type="number"
+                step="0.01"
+                formControlName="fixedRate"
+                [class.invalid]="serviceForm.get('fixedRate')?.invalid && serviceForm.get('fixedRate')?.touched"
+              />
+            </div>
+            <div>
+              <label>Duration (hours)</label>
+              <input
+                type="number"
+                step="0.5"
+                formControlName="estimatedDuration"
+                [class.invalid]="serviceForm.get('estimatedDuration')?.invalid && serviceForm.get('estimatedDuration')?.touched"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Category</label>
+            <select
+              formControlName="categoryID"
+              [class.invalid]="serviceForm.get('categoryID')?.invalid && serviceForm.get('categoryID')?.touched">
+              <option [ngValue]="null">-- Select Category --</option>
+              <option *ngFor="let c of categories" [ngValue]="c.categoryID">
+                {{ c.categoryName }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>Service Image (optional)</label>
+            <div class="file-input-wrapper">
+              <input type="file" (change)="onImageSelected($event)" />
+            </div>
+
+            <div class="image-preview" *ngIf="getPreviewImageUrl()">
+              <img [src]="getPreviewImageUrl()" alt="Preview" />
+            </div>
+          </div>
+
+          <div *ngIf="errorMessage" class="alert alert-error">
+            {{ errorMessage }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="spacer-left"></div>
+          <div class="right-actions">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="isSaving || uploadInProgress">
+              <span *ngIf="!isSaving">
+                {{ isEditMode ? 'Save Changes' : 'Create Service' }}
+              </span>
+              <span *ngIf="isSaving">Saving...</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

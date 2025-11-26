@@ -1,0 +1,66 @@
+<!-- src/app/auth/login.component.html -->
+<div class="login-container">
+  <!-- Animated Background -->
+  <div class="area">
+    <ul class="circles">
+      <li></li><li></li><li></li><li></li><li></li>
+      <li></li><li></li><li></li><li></li><li></li>
+    </ul>
+  </div>
+
+  <!-- Login Card -->
+  <div class="login-box">
+    <h2>Welcome Back</h2>
+    <p>Login to continue to your account.</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <!-- Email -->
+      <div class="user-box">
+        <input type="email" formControlName="email" required>
+        <label>Email Address</label>
+      </div>
+
+      <!-- Password -->
+      <div class="user-box">
+        <input [type]="showPassword ? 'text' : 'password'" formControlName="password" required>
+        <label>Password</label>
+        <span class="eye" (click)="showPassword = !showPassword">
+          <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </span>
+      </div>
+
+      <!-- SERVER ERROR (Wrong email/password) -->
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <!-- CLIENT-SIDE ERRORS (Invalid format, empty, etc.) -->
+      <div class="error-message" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+        {{ form.get('email')?.hasError('required') ? 'Email is required' : 'Invalid email format' }}
+      </div>
+
+      <div class="error-message" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+        <span *ngIf="form.get('password')?.hasError('required')">Password is required</span>
+        <span *ngIf="form.get('password')?.hasError('minlength')">Minimum 8 characters</span>
+        <span *ngIf="form.get('password')?.hasError('passwordComplexity')">
+          Must contain uppercase, lowercase, number & special character
+        </span>
+      </div>
+
+      <div class="forgot">
+        <a routerLink="/forgot-password">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="login-btn" [disabled]="loading || form.invalid">
+        <span></span><span></span><span></span><span></span>
+        {{ loading ? 'Logging in...' : 'LOGIN' }}
+      </button>
+
+      <div class="signup">
+        Don't have an account?
+        <a routerLink="/register">Register here</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,60 @@
+/* src/app/admin/layout/admin-sidebar.component.css */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link:hover {
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.1), transparent);
+  color: white;
+  padding-left: 28px;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #14b8a6;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.nav-link.active {
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.2), rgba(20, 184, 166, 0.05));
+  color: #14b8a6;
+  font-weight: 600;
+}
+
+.nav-link.active::before {
+  transform: scaleY(1);
+}
+
+.nav-link .icon {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover .icon,
+.nav-link.active .icon {
+  color: #14b8a6;
+}
+
+/* Smooth gradient text for logo */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

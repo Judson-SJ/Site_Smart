@@ -1,0 +1,84 @@
+/* Main Container */
+:host {
+  display: block;
+}
+
+/* Profile Header Avatar */
+.profile-avatar {
+  width: 8rem;
+  height: 8rem;
+  margin: 0 auto;
+  background: white;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  border-top-color: transparent;
+}
+
+/* Form Input Fields */
+input {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 1.2rem 1.5rem;
+  border-radius: 1rem;
+  border: 2px solid #d1d5db; /* Tailwind gray-300 */
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  border-color: #2563eb;  /* blue-600 */
+  box-shadow: 0 0 0 4px #bfdbfe; /* blue-300 ring */
+}
+
+/* Disabled Email Field */
+input[disabled] {
+  background-color: #f3f4f6; /* gray-100 */
+  color: #9ca3af; /* gray-400 */
+  cursor: not-allowed;
+}
+
+/* Buttons */
+button {
+  transition: all 0.3s ease;
+}
+
+button:hover:not([disabled]) {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success Message */
+.success-box {
+  background: #d1fae5;
+  border: 2px solid #10b981;
+  color: #065f46;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+/* Error Message */
+.error-box {
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+  color: #991b1b;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  font-size: 1.2rem;
+}

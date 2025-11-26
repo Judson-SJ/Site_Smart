@@ -1,0 +1,86 @@
+<!-- src/app/auth/register.component.html -->
+<div class="login-container">
+  <!-- Animated Background -->
+  <div class="area">
+    <ul class="circles">
+      <li></li><li></li><li></li><li></li><li></li>
+      <li></li><li></li><li></li><li></li><li></li>
+    </ul>
+  </div>
+
+  <!-- Register Card - EXACTLY LIKE LOGIN -->
+  <div class="login-box">
+    <h2>Create Account</h2>
+    <p>Join us today and get started!</p>
+
+    <!-- Messages -->
+    <div class="text-green-400 text-center mb-4" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="text-red-400 text-center mb-4" *ngIf="serverError">{{ serverError }}</div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="register()">
+
+      <!-- Full Name -->
+      <div class="user-box">
+        <input type="text" formControlName="fullName" required>
+        <label>Full Name</label>
+      </div>
+      <p class="error-msg" *ngIf="nameErrors">{{ nameErrors }}</p>
+
+      <!-- Email -->
+      <div class="user-box">
+        <input type="email" formControlName="email" required>
+        <label>Email Address</label>
+      </div>
+      <p class="error-msg" *ngIf="emailErrors">{{ emailErrors }}</p>
+
+      <!-- Phone -->
+      <div class="user-box">
+        <input type="tel" formControlName="phone" required maxlength="10">
+        <label>Phone Number</label>
+      </div>
+      <p class="error-msg" *ngIf="phoneErrors">{{ phoneErrors }}</p>
+
+      <!-- Password -->
+      <div class="user-box">
+        <input [type]="showPassword ? 'text' : 'password'"
+               formControlName="password"
+               required
+               (input)="updatePasswordStrength()">
+        <label>Password</label>
+        <span class="eye" (click)="showPassword = !showPassword">
+          <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+        </span>
+      </div>
+
+      <!-- Strength Bar -->
+      <div class="strength-bar">
+        <div [style.width.%]="passwordStrength"
+             [ngClass]="{
+               'bg-red-500': passwordStrength < 60,
+               'bg-yellow-500': passwordStrength >= 60 && passwordStrength < 100,
+               'bg-green-500': passwordStrength >= 100
+             }"></div>
+      </div>
+      <p class="error-msg" *ngIf="passwordErrors" [innerHTML]="passwordErrors"></p>
+
+      <!-- Confirm Password -->
+      <div class="user-box">
+        <input type="password" formControlName="confirmPassword" required>
+        <label>Confirm Password</label>
+      </div>
+      <p class="error-msg" *ngIf="confirmErrors">{{ confirmErrors }}</p>
+
+      <!-- Register Button -->
+      <button type="submit" class="login-btn" [disabled]="loading || passwordStrength < 100">
+        <span></span><span></span><span></span><span></span>
+        {{ loading ? 'Creating...' : 'REGISTER' }}
+      </button>
+
+      <!-- Login Link -->
+      <div class="signup mt-8">
+        Already have an account?
+        <a routerLink="/login">Login here</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+/* src/app/admin/layout/admin-layout.component.css */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link:hover {
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.15), transparent);
+  color: white;
+  padding-left: 28px;
+}
+
+/* Green Line Effect */
+.nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #14b8a6;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+/* Active State – Exact உங்க Screenshot மாதிரி! */
+.nav-link.active {
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.25), rgba(20, 184, 166, 0.08));
+  color: #14b8a6;
+  font-weight: 600;
+  border-left: 4px solid #14b8a6;
+  padding-left: 24px;
+}
+
+.nav-link.active::before {
+  transform: scaleY(1);
+}
+
+/* Icon Color */
+.nav-link .icon {
+  width: 20px;
+  height: 20px;
+  color: #94a3b8;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover .icon,
+.nav-link.active .icon {
+  color: #14b8a6;
+}
+
+/* Logo Gradient */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
