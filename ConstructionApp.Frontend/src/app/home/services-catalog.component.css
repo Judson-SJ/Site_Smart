@@ -1,0 +1,279 @@
+/* src/app/home/services-catalog.component.css
+   Full Black + Purple Glass Theme + Your Original Grid Size Restored
+*/
+
+/* ---------- Base / Reset ---------- */
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000000;
+  color: #e8eef6;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Host wrapper */
+:host {
+  display: block;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #000000 0%, #030305 100%);
+  color: #e8eef6;
+}
+
+/* ---------- GLASS NAVBAR ---------- */
+.logo-row {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  z-index: 9999;
+
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+}
+
+.logo-row .nav-inner {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 1.28rem;
+  color: #f6edff;
+  cursor: pointer;
+}
+
+.top-links {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.top-links a {
+  color: #e8ecf5;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 10px;
+  transition: 0.2s;
+}
+
+.top-links a:hover {
+  color: #c197ff;
+  transform: translateY(-2px);
+}
+
+.top-links .login {
+  padding: 8px 14px;
+  background: linear-gradient(90deg,#b67aff,#7c4dff);
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  color: #0b0511;
+  box-shadow: 0 10px 30px rgba(124,77,255,0.25);
+  transition: 0.2s;
+}
+
+.top-links .login:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(124,77,255,0.35);
+}
+
+.catalog-page {
+  padding-top: 90px;
+}
+
+/* ---------- Container ---------- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 20px;
+}
+
+/* header area */
+.catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.catalog-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #fff;
+}
+
+.search-box input {
+  background: #071018;
+  border: 1px solid rgba(255,255,255,0.05);
+  color: #dbeefc;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+/* ---------- Category Pills ---------- */
+.categories-row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+
+.cat-pill {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.03);
+  color: #e8eef6;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cat-pill:hover {
+  transform: translateY(-3px);
+}
+
+.cat-pill.active {
+  background: linear-gradient(90deg,#b67aff50,#7c4dff60);
+  border-color: rgba(180,122,255,0.4);
+  transform: translateY(-6px);
+  box-shadow: 0 14px 36px rgba(124,77,255,0.25);
+}
+
+/* ---------- RESTORED ORIGINAL GRID SIZE (IMPORTANT) ---------- */
+.grid-area { padding-bottom: 40px; }
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* YOUR ORIGINAL VALUE */
+  gap: 18px;
+  margin-top: 8px;
+}
+
+/* ---------- Glass Cards ---------- */
+.card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.65);
+  display: flex;
+  flex-direction: column;
+  transition: 0.25s;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(124,77,255,0.22);
+}
+
+/* IMAGE */
+.image-wrap {
+  height: 170px; /* YOUR ORIGINAL VALUE */
+  background: #0b1720;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: .3s;
+}
+
+.card:hover .image-wrap img {
+  transform: scale(1.06);
+}
+
+.img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  color: #bda1ff;
+}
+
+/* category pill inside card */
+.pill {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#b67aff,#7c4dff);
+  color: #0b0511;
+  font-weight: 800;
+}
+
+/* -------- Body -------- */
+.card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.desc {
+  font-size: 13px;
+  color: #bfcad8;
+  min-height: 36px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.btn-book {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg,#b67aff,#7c4dff);
+  border-radius: 999px;
+  border: none;
+  font-weight: 800;
+  cursor: pointer;
+  color: #0b0511;
+  box-shadow: 0 10px 30px rgba(124,77,255,0.24);
+  transition: .2s;
+}
+
+.btn-book:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(124,77,255,0.32);
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  padding: 40px 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(8px);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  .services-grid { grid-template-columns: 1fr; }
+  .catalog-page { padding-top: 78px; }
+  .image-wrap { height: 220px; }
+}

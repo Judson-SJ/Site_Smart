@@ -347,3 +347,4 @@ C:\Users\hp\Desktop\ConstructionApp\ConstructionApp.Api\obj\Debug\net9.0\ref\Con
 C:\Users\hp\Desktop\ConstructionApp\ConstructionApp.Api\bin\Debug\net9.0\CloudinaryDotNet.dll
 C:\Users\hp\Desktop\ConstructionApp\ConstructionApp.Api\bin\Debug\net9.0\Newtonsoft.Json.dll
 C:\Users\hp\Desktop\ConstructionApp\ConstructionApp.Api\bin\Debug\net9.0\ConstructionApp.Api.staticwebassets.runtime.json
+C:\Users\hp\Desktop\ConstructionApp\ConstructionApp.Api\obj\Debug\net9.0\ConstructionApp.Api.sourcelink.json

@@ -1,0 +1,74 @@
+<!-- src/app/home/services-catalog.component.html -->
+ <!-- FIXED NAV BAR (same as home page) -->
+<div class="logo-row">
+  <div class="nav-inner">
+    <div class="logo" routerLink="/home" style="cursor:pointer;">
+      ConstructPro
+    </div>
+    <nav class="top-links">
+      <a routerLink="/home">Home</a>
+      <a routerLink="/services">Services</a>
+      <a routerLink="/about">About Us</a>
+      <a routerLink="/contact">Contact</a>
+      <button class="login" routerLink="/login">Login</button>
+    </nav>
+  </div>
+</div>
+
+<div class="catalog-page">
+  <div class="catalog-header container">
+    <h2>Our Services</h2>
+    <div class="search-box">
+      <input type="text" placeholder="Search services..." [(ngModel)]="search" (ngModelChange)="applyFilter()" />
+    </div>
+  </div>
+
+  <!-- <div class="container categories-row">
+    <button
+      *ngFor="let c of categories"
+      class="cat-pill"
+      [class.active]="c.categoryID === activeCategoryId"
+      (click)="selectCategory(c.categoryID)">
+      {{ c.categoryName }} <span class="count" *ngIf="c.count>0">({{c.count}})</span>
+    </button>
+  </div> -->
+
+  <div class="container grid-area">
+    <div *ngIf="isLoading" class="loading">Loading services...</div>
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <div *ngIf="!isLoading && !error && filtered.length === 0" class="empty">
+      No services found.
+    </div>
+
+    <div class="services-grid">
+      <div class="card" *ngFor="let s of filtered">
+        <div class="image-wrap">
+          <img *ngIf="getImageUrl(s)" [src]="getImageUrl(s)" alt="{{ s.serviceName }}" />
+          <div *ngIf="!getImageUrl(s)" class="img-placeholder">{{ s.serviceName.slice(0,1) }}</div>
+          <!-- <span class="pill">{{ s.categoryName }}</span> -->
+        </div>
+
+        <div class="card-body">
+          <h3 class="title">{{ s.serviceName }}</h3>
+          <p class="desc">{{ s.description || 'No description available.' }}</p>
+
+          <div class="meta-row">
+            <div class="meta">
+              <div class="label">Fixed Price</div>
+              <div class="value">{{ formatPrice(s.fixedRate) }}</div>
+            </div>
+            <div class="meta">
+              <div class="label">Duration</div>
+              <div class="value">{{ s.estimatedDuration }} hrs</div>
+            </div>
+          </div>
+
+          <div class="actions-left">
+            <button class="btn-book" (click)="bookNow(s)">Book Service Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
