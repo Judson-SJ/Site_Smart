@@ -1,84 +1,74 @@
 <!-- src/app/customer/profile/profile.component.html -->
-<div class="min-h-screen bg-gradient-to-br from-[#0a0e2a] via-[#0f1a4e] to-[#0d1329] py-12 px-6 overflow-hidden relative">
-  <!-- Animated Background -->
-  <div class="fixed inset-0 -z-10">
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
-    <div class="absolute bottom-0 right-0 w-[700px] h-[700px] bg-blue-600/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-  </div>
+<div class="profile-wrapper">
+  <!-- Dashboard-உடைய exact same floating silver particles -->
+  <div class="particles-bg"></div>
 
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-5xl md:text-7xl font-extrabold text-center bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-16">
-      Settings
+  <div class="max-w-7xl mx-auto px-6 py-12">
+
+    <h1 class="text-6xl md:text-8xl font-extrabold text-center mb-16">
+      <span class="bg-gradient-to-r from-[#c4b5fd] to-[#8b5cf6] bg-clip-text text-transparent">
+        Settings
+      </span>
     </h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-      <!-- Left: Main Settings -->
+      <!-- Left Side -->
       <div class="lg:col-span-2 space-y-10">
 
         <!-- Profile Information -->
-        <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-10 shadow-2xl ring-1 ring-cyan-500/20">
-          <h2 class="text-3xl font-bold text-cyan-300 mb-8">Profile Information</h2>
+        <div class="glass-card">
+          <h2 class="section-title">Profile Information</h2>
 
-          <div class="flex flex-col md:flex-row gap-8 items-center mb-10">
-            <!-- Profile Image with Cloudinary Upload -->
+          <div class="flex flex-col md:flex-row gap-10 items-center">
             <div class="relative group">
-              <img [src]="user.avatar || 'assets/images/default-avatar.png'"
+              <img [src]="user.avatar || 'https://ui-avatars.com/api/?name=' + user.name + '&background=8b5cf6&color=fff&bold=true'"
                    alt="Profile"
-                   class="w-40 h-40 rounded-full border-8 border-cyan-400/50 shadow-2xl object-cover transition-all group-hover:border-cyan-400">
+                   class="w-44 h-44 rounded-full border-8 border-[#8b5cf6]/60 
+                          object-cover shadow-2xl transition-all duration-500
+                          group-hover:border-[#a78bfa] group-hover:scale-105">
 
-              <!-- Upload Button -->
               <button (click)="changeProfileImage()"
-                      class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <i-lucide name="camera" class="w-12 h-12 text-cyan-400"></i-lucide>
+                      class="absolute inset-0 rounded-full bg-black/70 backdrop-blur-sm
+                              flex items-center justify-center opacity-0 group-hover:opacity-100
+                              transition-all duration-500">
+                <i class="fas fa-camera text-[#c4b5fd] text-5xl"></i>
               </button>
             </div>
 
-            <div class="flex-1 space-y-5">
-              <input [(ngModel)]="user.name"
-                     class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl text-white text-xl font-medium focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition"
-                     placeholder="Full Name">
-
-              <input [(ngModel)]="user.email" type="email" readonly
-                     class="w-full px-6 py-4 bg-white/5 border border-white/20 rounded-2xl text-gray-400 text-xl cursor-not-allowed"
-                     placeholder="Email Address">
-
-              <input [(ngModel)]="user.phone" type="tel"
-                     class="w-full px-6 py-4 bg-white/10 border border-white/30 rounded-2xl text-white text-xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 transition"
-                     placeholder="Phone Number">
+            <div class="flex-1 space-y-6 w-full">
+              <input [(ngModel)]="user.name" class="purple-input" placeholder="Full Name">
+              <input [(ngModel)]="user.email" type="email" class="purple-input opacity-70" readonly disabled placeholder="Email Address">
+              <input [(ngModel)]="user.phone" type="tel" class="purple-input" placeholder="Phone Number">
             </div>
           </div>
         </div>
 
         <!-- Saved Addresses -->
-        <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-10 shadow-2xl ring-1 ring-cyan-500/20">
+        <div class="glass-card">
           <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-bold text-cyan-300">Saved Addresses</h2>
-            <button (click)="addNewAddress()"
-                    class="px-8 py-4 bg-cyan-500 text-white font-bold rounded-2xl hover:bg-cyan-400 transition shadow-lg">
+            <h2 class="section-title">Saved Addresses</h2>
+            <button (click)="addNewAddress()" class="purple-btn">
               + Add New Address
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div *ngFor="let addr of addresses"
-                 class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 hover:border-cyan-400/50 transition-all hover:-translate-y-2">
-              <div class="flex justify-between items-start mb-4">
-                <h3 class="text-xl font-bold text-cyan-300">{{ addr.title }}</h3>
-                <div class="flex gap-3">
-                  <button (click)="setDefaultAddress(addr.id)"
-                          class="text-teal-400 hover:text-teal-300">
-                    <i-lucide name="check-circle" class="w-6 h-6"
-                             [class.text-teal-600]="addr.isDefault"></i-lucide>
+            <div *ngFor="let addr of addresses" class="address-card">
+              <div class="flex justify-between items-start mb-3">
+                <h3 class="text-xl font-bold text-[#c4b5fd]">{{ addr.title }}</h3>
+                <div class="flex gap-4">
+                  <button (click)="setDefaultAddress(addr.id)" class="text-[#a78bfa] hover:text-white text-2xl">
+                    <i class="fas fa-check-circle" [class.text-[#8b5cf6]]="addr.isDefault"></i>
                   </button>
-                  <button (click)="deleteAddress(addr.id)" class="text-red-400 hover:text-red-300">
-                    <i-lucide name="trash-2" class="w-6 h-6"></i-lucide>
+                  <button (click)="deleteAddress(addr.id)" class="text-red-400 hover:text-red-300 text-2xl">
+                    <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
-              <p class="text-gray-300 whitespace-pre-line text-sm">{{ addr.address }}</p>
-              <span *ngIf="addr.isDefault"
-                    class="inline-block mt-4 px-5 py-2 bg-teal-600 text-white text-xs font-bold rounded-full">
+              <p class="text-gray-300 text-sm leading-relaxed">{{ addr.address }}</p>
+              <span *ngIf="addr.isDefault" 
+                    class="inline-block mt-4 px-6 py-2 bg-[#8b5cf6] text-white text-xs font-bold rounded-full">
                 Default Address
               </span>
             </div>
@@ -86,52 +76,51 @@
         </div>
 
         <!-- Notification Preferences -->
-        <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-10 shadow-2xl ring-1 ring-cyan-500/20">
-          <h2 class="text-3xl font-bold text-cyan-300 mb-8">Notification Preferences</h2>
-          <p class="text-gray-400 mb-10">Control how we communicate with you</p>
+        <div class="glass-card">
+          <h2 class="section-title">Notification Preferences</h2>
+          <p class="text-[#c4b5fd]/80 mb-10">Control how we communicate with you</p>
 
-          <div class="space-y-8">
-            <label class="flex items-center justify-between cursor-pointer">
+          <div class="space-y-10">
+            <label class="flex items-center justify-between cursor-pointer group">
               <div>
-                <p class="text-white font-medium text-lg">Booking Confirmation</p>
-                <p class="text-gray-400 text-sm">Receive email when your booking is confirmed</p>
+                <p class="text-white font-medium text-lg group-hover:text-[#c4b5fd] transition">Booking Confirmation</p>
+                <p class="text-[#a78bfa]/70 text-sm">Receive email when your booking is confirmed</p>
               </div>
               <input type="checkbox" [(ngModel)]="notifications.bookingConfirmation"
-                     class="w-7 h-7 text-cyan-500 rounded focus:ring-cyan-400 focus:ring-4">
+                     class="w-8 h-8 rounded-lg accent-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/40">
             </label>
 
-            <label class="flex items-center justify-between cursor-pointer">
+            <label class="flex items-center justify-between cursor-pointer group">
               <div>
-                <p class="text-white font-medium text-lg">Status Updates</p>
-                <p class="text-gray-400 text-sm">Get notified about changes to your service status</p>
+                <p class="text-white font-medium text-lg group-hover:text-[#c4b5fd] transition">Status Updates</p>
+                <p class="text-[#a78bfa]/70 text-sm">Get notified about changes to your service status</p>
               </div>
               <input type="checkbox" [(ngModel)]="notifications.statusUpdates"
-                     class="w-7 h-7 text-cyan-500 rounded focus:ring-cyan-400 focus:ring-4">
+                     class="w-8 h-8 rounded-lg accent-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/40">
             </label>
 
-            <label class="flex items-center justify-between cursor-pointer">
+            <label class="flex items-center justify-between cursor-pointer group">
               <div>
-                <p class="text-white font-medium text-lg">Promotions & Offers</p>
-                <p class="text-gray-400 text-sm">Receive news about special offers and promotions</p>
+                <p class="text-white font-medium text-lg group-hover:text-[#c4b5fd] transition">Promotions & Offers</p>
+                <p class="text-[#a78bfa]/70 text-sm">Receive news about special offers and promotions</p>
               </div>
               <input type="checkbox" [(ngModel)]="notifications.offers"
-                     class="w-7 h-7 text-cyan-500 rounded focus:ring-cyan-400 focus:ring-4">
+                     class="w-8 h-8 rounded-lg accent-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf6]/40">
             </label>
           </div>
         </div>
       </div>
 
-      <!-- Right: Save Button -->
-      <div class="space-y-10">
-        <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-10 shadow-2xl ring-1 ring-cyan-500/20 text-center">
-          <h3 class="text-3xl font-bold text-cyan-300 mb-8">Save Changes</h3>
+      <!-- Right Side - Save -->
+      <div class="lg:col-span-1">
+        <div class="glass-card sticky top-8">
+          <h3 class="text-3xl font-bold text-[#c4b5fd] mb-10 text-center">Save Changes</h3>
 
-          <button (click)="saveProfile()"
-                  class="w-full py-7 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-2xl font-bold rounded-3xl shadow-2xl hover:shadow-cyan-500/60 hover:scale-105 transition-all duration-300">
+          <button (click)="saveProfile()" class="save-btn w-full">
             Save All Changes
           </button>
 
-          <button class="w-full mt-6 py-5 border-2 border-gray-600 text-gray-400 font-bold rounded-3xl hover:bg-white/10 transition">
+          <button class="cancel-btn w-full mt-6">
             Cancel
           </button>
         </div>

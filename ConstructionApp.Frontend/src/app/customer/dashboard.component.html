@@ -1,0 +1,139 @@
+<!-- src/app/customer/dashboard/customer-dashboard.component.html -->
+<div class="dashboard-wrapper">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">C</span>
+      <span class="logo-text">ConstructPro</span>
+    </div>
+
+    <nav class="nav-menu">
+      <a routerLink="/customer/dashboard" routerLinkActive="active" class="nav-item">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+      <a routerLink="/customer/booking" 
+         routerLinkActive="active" 
+         class="nav-item book-service-link">
+        <i class="fas fa-tools"></i> Book a Service
+      </a>
+      <a [routerLink]="['/customer/profile']" 
+        routerLinkActive="active" 
+        [routerLinkActiveOptions]="{exact: false}"
+        class="nav-item">
+        <i class="fas fa-user"></i> Profile
+      </a>
+        
+      <a routerLink="/customer/notifications" class="nav-item">
+        <i class="fas fa-bell"></i> Notifications
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-question-circle"></i> Help
+      </a>
+    </nav>
+
+    <!-- User Info -->
+    <div class="user-info">
+      <img [src]="'https://ui-avatars.com/api/?name=' + userName + '&background=7c4dff&color=fff&bold=true'" 
+           alt="User" class="user-avatar">
+      <div class="user-details">
+        <div class="user-name">{{ userName }}</div>
+        <div class="user-email">{{ userEmail }}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="page-header">
+      <h1>Welcome back, {{ userName }}!</h1>
+      <p>Here's a summary of your construction service bookings.</p>
+    </header>
+
+    <!-- Current Booking -->
+    <section class="current-booking-section" *ngIf="currentBooking; else noCurrent">
+      <h2>Current Booking</h2>
+      <div class="booking-card glass">
+        <div class="status-badge" [ngClass]="getStatusClass(currentBooking.status)">
+          {{ currentBooking.status }}
+        </div>
+
+        <h3>{{ currentBooking.serviceName }}</h3>
+        <p class="date"><i class="fas fa-calendar-alt"></i> {{ currentBooking.scheduledDate }}</p>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="currentBooking.progress"></div>
+          </div>
+          <span class="progress-text">{{ currentBooking.progress }}% Complete</span>
+        </div>
+
+        <!-- Technician Info -->
+        <div class="technician-info">
+          <img [src]="currentBooking.technicianPhoto || 'https://randomuser.me/api/portraits/men/32.jpg'" 
+               alt="Technician" class="tech-avatar">
+          <div>
+            <strong>{{ currentBooking.technicianName }}</strong>
+            <small>Assigned Technician</small>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-secondary" (click)="contactTechnician()">
+            <i class="fas fa-comment"></i> Chat
+          </button>
+          <button class="btn-primary" (click)="viewDetails(currentBooking.bookingID)">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <ng-template #noCurrent>
+      <div class="no-booking glass">
+        <i class="fas fa-inbox fa-3x"></i>
+        <h3>No Active Booking</h3>
+        <p>You don't have any ongoing projects.</p>
+        
+      </div>
+    </ng-template>
+
+    <!-- Booking History -->
+    <section class="history-section">
+      <div class="section-header">
+        <h2>Booking History</h2>
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search your bookings...">
+        </div>
+      </div>
+
+      <div class="table-container glass">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Technician</th>
+              <th>Price</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of bookingHistory">
+              <td><strong>{{ b.serviceName }}</strong></td>
+              <td>{{ b.scheduledDate }}</td>
+              <td>{{ b.technicianName }}</td>
+              <td><strong>Rs. {{ b.price | number:'1.2-2' }}</strong></td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(b.status)">
+                  {{ b.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>

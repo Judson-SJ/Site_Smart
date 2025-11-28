@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../shared/services/auth.service';
-import { LucideAngularModule } from "lucide-angular";
+import { LucideAngularModule } from 'lucide-angular';
 
 declare const cloudinary: any;
 
@@ -36,11 +36,7 @@ export class ProfileComponent implements OnInit {
     avatar: 'assets/images/default-avatar.png'
   };
 
-  addresses: Address[] = [
-    { id: 1, title: 'Main Office Site', address: '123 Construction Ave\nBuilding B, 5th Floor\nColombo 07, Sri Lanka', isDefault: true },
-    { id: 2, title: 'Warehouse Location', address: '456 Logistics Park\nUnit 12, Zone E\nGalle Road, Colombo' }
-  ];
-
+  addresses: Address[] = [];
   notifications: Notifications = {
     bookingConfirmation: true,
     statusUpdates: true,
@@ -49,21 +45,17 @@ export class ProfileComponent implements OnInit {
 
   private apiUrl = 'http://localhost:5035/api';
 
-  // Cloudinary Config – உங்க details!
   private cloudinaryConfig = {
     cloud_name: 'dxbhnpgd4',
     upload_preset: 'construction_app',
     folder: 'constructpro/profiles',
     cropping: true,
     multiple: false,
-    sources: ['local', 'camera', 'facebook', 'instagram'],
+    sources: ['local', 'camera'],
     tags: ['profile', 'customer']
   };
 
-  constructor(
-    private http: HttpClient,
-    private auth: AuthService
-  ) {}
+  constructor(private http: HttpClient, private auth: AuthService) {}
 
   ngOnInit(): void {
     this.loadProfile();
@@ -71,78 +63,95 @@ export class ProfileComponent implements OnInit {
 
   loadProfile() {
     const token = this.auth.getToken();
+    if (!token) return;
+
     this.http.get<any>(`${this.apiUrl}/customer/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.user.name = res.data.fullName;
-          this.user.email = res.data.email;
-          this.user.phone = res.data.phone || '';
-          this.user.avatar = res.data.profileImage || 'assets/images/default-avatar.png';
+          this.user = {
+            name: res.data.fullName || 'User',
+            email: res.data.email || '',
+            phone: res.data.phone || '',
+            avatar: res.data.profileImage || 'assets/images/default-avatar.png'
+          };
+
+          this.addresses = res.data.addresses || [
+            { id: 1, title: 'Home', address: '123 Main Street\nColombo 07', isDefault: true },
+            { id: 2, title: 'Office', address: '456 Business Park\nGalle Road' }
+          ];
         }
       },
-      error: () => alert('Failed to load profile')
+      error: (err) => {
+        console.error('Profile load failed', err);
+        this.user.name = localStorage.getItem('userName') || 'User';
+        this.user.email = localStorage.getItem('email') || 'user@example.com';
+      }
     });
   }
 
-  // CLOUDINARY PROFILE IMAGE UPLOAD
+  // Cloudinary Upload
   changeProfileImage() {
-    cloudinary.openUploadWidget(
-      this.cloudinaryConfig,
-      (error: any, result: any) => {
-        if (!error && result && result.event === 'success') {
-          const imageUrl = result.info.secure_url;
-          this.user.avatar = imageUrl;
-          this.saveProfileImage(imageUrl);
-        }
+    cloudinary.openUploadWidget(this.cloudinaryConfig, (error: any, result: any) => {
+      if (!error && result?.event === 'success') {
+        const imageUrl = result.info.secure_url;
+        this.user.avatar = imageUrl;
+        this.saveProfileImage(imageUrl);
       }
-    );
+    });
   }
 
   saveProfileImage(url: string) {
     const token = this.auth.getToken();
-    this.http.patch(`${this.apiUrl}/customer/profile/image`,
+    if (!token) return;
+
+    this.http.patch(`${this.apiUrl}/customer/profile/image`, 
       { profileImage: url },
       { headers: { Authorization: `Bearer ${token}` } }
     ).subscribe({
-      next: () => alert('Profile picture updated!'),
-      error: () => alert('Failed to save image')
+      next: () => console.log('Profile image updated'),
+      error: () => alert('Failed to save profile picture')
     });
   }
 
-  // ADDRESS MANAGEMENT
   addNewAddress() {
     this.addresses.push({
       id: Date.now(),
       title: 'New Address',
-      address: 'Enter full address...',
+      address: 'Enter your full address...',
       isDefault: false
     });
   }
 
   deleteAddress(id: number) {
-    if (!confirm('Delete this address?')) return;
-    this.addresses = this.addresses.filter(a => a.id !== id);
+    if (confirm('Delete this address?')) {
+      this.addresses = this.addresses.filter(a => a.id !== id);
+    }
   }
 
   setDefaultAddress(id: number) {
     this.addresses.forEach(a => a.isDefault = a.id === id);
   }
 
-  // SAVE PROFILE
+  // SAVE NAME & PHONE
   saveProfile() {
+    const token = this.auth.getToken();
+    if (!token) {
+      alert('You are not logged in!');
+      return;
+    }
+
     const payload = {
       fullName: this.user.name,
       phone: this.user.phone
     };
 
-    const token = this.auth.getToken();
     this.http.put(`${this.apiUrl}/customer/profile`, payload, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: () => alert('Profile updated successfully!'),
-      error: () => alert('Save failed')
+      error: () => alert('Failed to update profile')
     });
   }
-}
+} 
