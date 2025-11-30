@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/nV0LrjxqUQ=",
+  "dgSpecHash": "1XRKlh28hRE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Sutharsy\\Desktop\\New folder\\Final-Project\\ConstructionApp.Api\\ConstructionApp.Api.csproj",
+  "projectFilePath": "C:\\Users\\Sutharsy\\Desktop\\Site_smart\\ConstructionApp.Api\\ConstructionApp.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Sutharsy\\.nuget\\packages\\automapper\\13.0.0\\automapper.13.0.0.nupkg.sha512",
     "C:\\Users\\Sutharsy\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",

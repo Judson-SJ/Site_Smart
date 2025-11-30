@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { forkJoin } from 'rxjs';
 
 interface ServiceDto {
   serviceID: number;
@@ -12,6 +13,11 @@ interface ServiceDto {
   fixedRate: number;
   estimatedDuration: number;
   imageUrl?: string | null;
+}
+
+interface CartItem {
+  service: ServiceDto;
+  quantity: number;
 }
 
 interface CalendarDay {
@@ -30,7 +36,7 @@ interface CalendarDay {
 export class BookingComponent implements OnInit {
   step = 1;
   services: ServiceDto[] = [];
-  selectedService: ServiceDto | null = null;
+  cart: CartItem[] = [];
   selectedDate = '';
   selectedTime = '';
   isLoading = true;
@@ -38,6 +44,7 @@ export class BookingComponent implements OnInit {
 
   currentMonth: string = '';
   currentYear: number = 0;
+  currentMonthIndex: number = 0;
 
   timeSlots: string[] = [
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
@@ -46,7 +53,6 @@ export class BookingComponent implements OnInit {
   ];
 
   calendarDays: CalendarDay[] = [];
-
   private apiUrl = (environment.apiBaseUrl || '').replace(/\/$/, '');
 
   constructor(
@@ -56,71 +62,88 @@ export class BookingComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.generateCalendar();
+    this.setCurrentMonth();
     this.loadServices();
-
-    const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras?.state;
-    if (state?.['selectedService']) {
-      this.selectedService = state['selectedService'] as ServiceDto;
-      this.step = 2;
-    }
   }
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
-    const headers = new HttpHeaders();
-    if (token) {
-      return headers.set('Authorization', `Bearer ${token}`);
-    }
-    return headers;
+  // ====================== CALENDAR ======================
+  private setCurrentMonth(): void {
+    const today = new Date();
+    this.currentYear = today.getFullYear();
+    this.currentMonthIndex = today.getMonth();
+    this.currentMonth = today.toLocaleString('default', { month: 'long' });
+    this.generateCalendar();
   }
 
   generateCalendar(): void {
+    const firstDay = new Date(this.currentYear, this.currentMonthIndex, 1).getDay();
+    const daysInMonth = new Date(this.currentYear, this.currentMonthIndex + 1, 0).getDate();
     const today = new Date();
-    this.currentMonth = today.toLocaleString('default', { month: 'long' });
-    this.currentYear = today.getFullYear();
-
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    today.setHours(0, 0, 0, 0);
 
     this.calendarDays = [];
-
     for (let i = 0; i < firstDay; i++) {
       this.calendarDays.push({ day: '', disabled: true });
     }
-
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(today.getFullYear(), today.getMonth(), day);
-      const isPast = date < new Date(today.setHours(0, 0, 0, 0));
+      const date = new Date(this.currentYear, this.currentMonthIndex, day);
+      date.setHours(0, 0, 0, 0);
+      const isPast = date < today;
+
       this.calendarDays.push({
         day,
         disabled: isPast,
-        selected: false
+        selected: this.selectedDate === `${day} ${this.currentMonth} ${this.currentYear}`
       });
     }
   }
 
+  previousMonth(): void {
+    if (this.currentMonthIndex === 0) {
+      this.currentMonthIndex = 11;
+      this.currentYear--;
+    } else this.currentMonthIndex--;
+    this.currentMonth = new Date(this.currentYear, this.currentMonthIndex).toLocaleString('default', { month: 'long' });
+    this.generateCalendar();
+  }
+
+  nextMonth(): void {
+    if (this.currentMonthIndex === 11) {
+      this.currentMonthIndex = 0;
+      this.currentYear++;
+    } else this.currentMonthIndex++;
+    this.currentMonth = new Date(this.currentYear, this.currentMonthIndex).toLocaleString('default', { month: 'long' });
+    this.generateCalendar();
+  }
+
+  selectDate(day: CalendarDay): void {
+    if (day.disabled || typeof day.day !== 'number') return;
+    this.calendarDays.forEach(d => d.selected = false);
+    day.selected = true;
+    this.selectedDate = `${day.day} ${this.currentMonth} ${this.currentYear}`;
+  }
+
+  // ====================== AUTH & SERVICES ======================
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('authToken');
+    let headers = new HttpHeaders();
+    if (token) headers = headers.set('Authorization', `Bearer ${token}`);
+    return headers;
+  }
+
   loadServices(): void {
     this.isLoading = true;
-    const url = `${this.apiUrl}/admin/services`;
-
-    this.http.get<ServiceDto[]>(url, { headers: this.getAuthHeaders() }).subscribe({
-      next: (data) => {
-        this.services = data || [];
-        this.isLoading = false;
-
-        const serviceId = this.route.snapshot.queryParams['serviceId'];
-        if (serviceId) {
-          const service = this.services.find(s => s.serviceID === Number(serviceId));
-          if (service) this.selectService(service);
+    this.http.get<ServiceDto[]>(`${this.apiUrl}/admin/services`, { headers: this.getAuthHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.services = data || [];
+          this.isLoading = false;
+        },
+        error: () => {
+          this.error = 'Failed to load services.';
+          this.isLoading = false;
         }
-      },
-      error: () => {
-        this.error = 'Failed to load services. Please try again.';
-        this.isLoading = false;
-      }
-    });
+      });
   }
 
   getImageUrl(service: ServiceDto): string {
@@ -131,91 +154,138 @@ export class BookingComponent implements OnInit {
     return `${base}${path}`;
   }
 
-  formatDuration(hours: number): string {
-    return hours === 1 ? '1 hr' : `${hours} hrs`;
-  }
-
   formatPrice(price: number): string {
     return 'Rs. ' + price.toLocaleString('en-IN');
   }
 
-  selectService(service: ServiceDto): void {
-    this.selectedService = service;
+  // ====================== CART ======================
+  getCartItem(serviceId: number): CartItem | undefined {
+    return this.cart.find(i => i.service.serviceID === serviceId);
+  }
+
+  addToCart(service: ServiceDto): void {
+    const item = this.getCartItem(service.serviceID);
+    if (item) item.quantity++;
+    else this.cart.push({ service, quantity: 1 });
+  }
+
+  increaseQty(serviceId: number): void {
+    const item = this.getCartItem(serviceId);
+    if (item) item.quantity++;
+  }
+
+  decreaseQty(serviceId: number): void {
+    const item = this.getCartItem(serviceId);
+    if (item && item.quantity > 1) item.quantity--;
+    else this.removeFromCart(serviceId);
+  }
+
+  removeFromCart(serviceId: number): void {
+    this.cart = this.cart.filter(i => i.service.serviceID !== serviceId);
+  }
+
+  get totalAmount(): number {
+    return this.cart.reduce((sum, item) => sum + (item.service.fixedRate * item.quantity), 0);
+  }
+
+  get totalItems(): number {
+    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   goToSchedule(): void {
-    if (this.selectedService) {
-      this.step = 2;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
-
-  selectDate(day: CalendarDay): void {
-    if (day.disabled || typeof day.day !== 'number') return;
-
-    this.calendarDays.forEach(d => d.selected = false);
-    day.selected = true;
-    this.selectedDate = `${day.day} ${this.currentMonth} ${this.currentYear}`;
-  }
-
-  // 100% WORKING CONFIRM BOOKING – MATCHES YOUR BACKEND EXACTLY!
-  confirmBooking(): void {
-    if (!this.selectedService || !this.selectedDate || !this.selectedTime) {
-      alert('Please select service, date, and time!');
+    if (this.cart.length === 0) {
+      alert('Please add at least one service!');
       return;
     }
+    this.step = 2;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
-    // Convert "23 November 2025" + "11:00 AM" → ISO DateTime
-    const [day, month, year] = this.selectedDate.split(' ');
-    const monthIndex = new Date(Date.parse(`${month} 1, ${year}`)).getMonth() + 1;
-    const dateStr = `${year}-${monthIndex.toString().padStart(2, '0')}-${day.padStart(2, '0')}`;
+  // ====================== BOOKING LOGIC ======================
+  initiatePayment(): void {
+    if (!this.selectedDate || !this.selectedTime) {
+      alert('Please select date and time!');
+      return;
+    }
+    this.saveBookingAndGoToDashboard();
+  }
 
-    // Convert time (e.g., "11:00 AM" → "11:00")
-    let [time, period] = this.selectedTime.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-    if (period === 'PM' && hours !== 12) hours += 12;
-    if (period === 'AM' && hours === 12) hours = 0;
-    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+  private saveBookingAndGoToDashboard(): void {
+    this.http.get<any>(`${this.apiUrl}/addresses/my`, { headers: this.getAuthHeaders() })
+      .subscribe({
+        next: (addrRes) => {
+          const addresses = Array.isArray(addrRes) ? addrRes : addrRes.data || [];
+          const defaultAddr = addresses.find((a: any) => a.isDefault || a.IsDefault);
+          const address = defaultAddr || addresses[0];
 
-    const startDateTime = `${dateStr}T${timeStr}`;
-    const endDateTime = new Date(new Date(startDateTime).getTime() + this.selectedService.estimatedDuration * 60 * 60 * 1000)
-      .toISOString();
-
-    // FormData – because backend uses [FromForm]
-    const formData = new FormData();
-    formData.append('ServiceID', this.selectedService.serviceID.toString());
-    formData.append('Description', this.selectedService.description || 'Service booked via app');
-    formData.append('AddressID', '1'); // Change later when address system ready
-    formData.append('PreferredStartDateTime', new Date(startDateTime).toISOString());
-    formData.append('PreferredEndDateTime', endDateTime);
-
-    console.log('Booking Request:', Object.fromEntries(formData));
-
-    // CORRECT API ENDPOINT: /api/bookings (NOT /customer/bookings)
-    this.http.post(`${this.apiUrl}/api/bookings`, formData, {
-      headers: this.getAuthHeaders() // Only Authorization – NO Content-Type!
-    }).subscribe({
-      next: (response: any) => {
-        console.log('Booking Created!', response);
-
-        this.router.navigate(['/customer/booking-success'], {
-          state: {
-            booking: {
-              bookingId: response.data?.BookingID || 'BKG' + Date.now(),
-              serviceName: this.selectedService!.serviceName,
-              price: this.selectedService!.fixedRate,
-              duration: this.formatDuration(this.selectedService!.estimatedDuration),
-              date: this.selectedDate,
-              time: this.selectedTime,
-              serviceImage: this.getImageUrl(this.selectedService!)
-            }
+          if (!address) {
+            alert('Please add an address in your profile first!');
+            this.router.navigate(['/customer/profile']);
+            return;
           }
-        });
-      },
-      error: (err) => {
-        console.error('Booking Failed:', err);
-        alert(`Booking failed! Status: ${err.status}\nCheck console (F12)`);
-      }
+
+          const addressId = address.addressID || address.AddressID;
+          this.createBookingsWithAddress(addressId);
+        },
+        error: () => {
+          alert('Unable to fetch address. Please try again.');
+        }
+      });
+  }
+private createBookingsWithAddress(addressId: number): void {
+  const [day, monthName, year] = this.selectedDate.split(' ');
+  const monthIndex = new Date(Date.parse(`${monthName} 1, ${year}`)).getMonth();
+  const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  let [time, period] = this.selectedTime.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+
+  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+  const preferredStart = `${dateStr}T${timeStr}`;
+
+  const requests = this.cart.map(item => {
+    // C# DTO-க்கு EXACT MATCH! (PascalCase + Correct Names)
+    const payload = {
+      ServiceID: item.service.serviceID,
+      Quantity: item.quantity,
+      Description: `${item.service.serviceName} × ${item.quantity}`,
+      AddressID: addressId,
+      PreferredStartDateTime: preferredStart,
+      PreferredEndDateTime: new Date(
+        new Date(preferredStart).getTime() + 
+        (item.service.estimatedDuration * 60 * 60 * 1000 * item.quantity)
+      ).toISOString()
+    };
+
+    console.log('Sending payload:', payload); // Debug பார்க்க
+
+    return this.http.post(`${this.apiUrl}/bookings`, payload, {
+      headers: this.getAuthHeaders().set('Content-Type', 'application/json')
     });
+  });
+
+  forkJoin(requests).subscribe({
+    next: (responses) => {
+      console.log('All bookings created:', responses);
+      this.step = 3; // SUCCESS SCREEN
+    },
+    error: (err) => {
+      console.error('Booking API Error:', err);
+      if (err.status === 400) {
+        alert('Invalid data sent. Check console (F12) for details.');
+      } else if (err.status === 401) {
+        alert('Session expired! Login again.');
+        this.router.navigate(['/login']);
+      } else {
+        alert('Booking failed: ' + (err.error?.message || err.statusText || 'Server error'));
+      }
+    }
+  });
+}
+  // THIS WAS MISSING! NOW ADDED!
+  goToDashboard(): void {
+    this.router.navigate(['/customer/dashboard']);
   }
 }

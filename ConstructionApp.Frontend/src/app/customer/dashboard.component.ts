@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../shared/services/auth.service';  // <-- இது ரொம்ப முக்கியம்!
 import { environment } from '../../environments/environment';
 
 interface Booking {
@@ -26,9 +27,10 @@ interface Booking {
 })
 export class CustomerDashboardComponent implements OnInit {
 
-  // User Info - localStorage இருந்தா எடுக்கும், இல்லைனா default
-  userName: string = 'User';
-  userEmail: string = 'customer@example.com';
+  userName: string = 'Loading...';
+  userEmail: string = '';
+  userPhone: string = '';
+  userAvatar: string = 'assets/images/default-avatar.png';
 
   currentBooking: Booking | null = null;
   bookingHistory: Booking[] = [];
@@ -38,79 +40,79 @@ export class CustomerDashboardComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private router: Router
-  ) {
-    // Page load ஆனதும் user details எடுக்கும்
-    const storedName = localStorage.getItem('userName');
-    const storedEmail = localStorage.getItem('email');
-
-    this.userName = storedName || 'User';
-    this.userEmail = storedEmail || 'customer@example.com';
-  }
+    private router: Router,
+    private auth: AuthService   // <-- AuthService inject பண்ணு!
+  ) {}
 
   ngOnInit(): void {
-    this.loadDashboard();
+    this.loadUserInfo();      // First user details load
+    this.loadDashboard();     // Then bookings
+  }
+
+  // REAL USER DETAILS FROM TOKEN + API
+  loadUserInfo() {
+    const token = this.auth.getToken();
+
+    if (!token) {
+      alert('Session expired! Please login again.');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    // Decode JWT token to get name/email (fast method)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      this.userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || payload.name || '';
+      this.userEmail = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || payload.email || '';
+    } catch (e) {
+      this.userName = '';
+    }
+
+    // Optional: API-ல இருந்து fresh data எடுக்கலாம்
+    this.http.get<any>(`${this.apiUrl}/customer/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.userName = res.data.fullName || this.userName;
+          this.userEmail = res.data.email || this.userEmail;
+          this.userPhone = res.data.phone || '';
+          this.userAvatar = res.data.profileImage || this.userAvatar;
+
+          // Save to localStorage (for offline fallback)
+          localStorage.setItem('userName', this.userName);
+          localStorage.setItem('userEmail', this.userEmail);
+        }
+      },
+      error: () => {
+        // If API fail ஆனாலும் token-ல இருந்து name காட்டும்
+        console.warn('Profile API failed, using token data');
+      }
+    });
   }
 
   loadDashboard(): void {
+    const token = this.auth.getToken();
+    if (!token) return;
+
     this.loading = true;
 
-    this.http.get<any>(`${this.apiUrl}/customer/dashboard`).subscribe({
+    this.http.get<any>(`${this.apiUrl}/customer/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
       next: (res) => {
         this.currentBooking = res.currentBooking || null;
         this.bookingHistory = res.history || [];
         this.loading = false;
       },
       error: (err) => {
-        console.warn('Dashboard API failed, loading mock data...', err);
-
-        // Mock data for development
-        this.currentBooking = {
-          bookingID: 101,
-          serviceName: 'Kitchen Remodeling Project',
-          scheduledDate: 'Oct 26, 2024',
-          technicianName: 'Bob Vance',
-          technicianPhoto: 'https://randomuser.me/api/portraits/men/32.jpg',
-          price: 2500,
-          status: 'In-Progress',
-          progress: 75,
-          isCurrent: true
-        };
-
-        this.bookingHistory = [
-          {
-            bookingID: 99,
-            serviceName: 'Bathroom Tile Installation',
-            scheduledDate: 'Jun 15, 2024',
-            technicianName: 'Phyllis Lapin',
-            price: 1250,
-            status: 'Completed',
-            progress: 100
-          },
-          {
-            bookingID: 98,
-            serviceName: 'Electrical Wiring Inspection',
-            scheduledDate: 'Mar 22, 2024',
-            technicianName: 'Dwight Schrute',
-            price: 300,
-            status: 'Completed',
-            progress: 100
-          },
-          {
-            bookingID: 97,
-            serviceName: 'Rooftop AC Unit Repair',
-            scheduledDate: 'Dec 06, 2023',
-            technicianName: 'Michael Scott',
-            price: 850.75,
-            status: 'Completed',
-            progress: 100
-          }
-        ];
-
+        console.warn('Dashboard failed, showing mock data...', err);
+   //   this.loadMockData(); // Development-க்கு மட்டும்
         this.loading = false;
       }
     });
   }
+
 
   getStatusClass(status: string): any {
     return {
@@ -126,20 +128,15 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   contactTechnician(): void {
-    alert('Opening chat with technician...');
-    // இங்க chat open பண்ணலாம் later
+    if (this.currentBooking) {
+      this.router.navigate(['/customer/chat', this.currentBooking.bookingID]);
+    }
   }
 
-  // Logout Function - 100% working
   logout(): void {
-    // Clear everything
     localStorage.clear();
     sessionStorage.clear();
-
-    // Optional: Show message
     alert('Logged out successfully!');
-
-    // Redirect to login
-    this.router.navigate(['/login']);
+    this.router.navigate(['/home']);
   }
 }
