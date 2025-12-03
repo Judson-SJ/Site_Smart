@@ -1,4 +1,4 @@
-// Models/User.cs + Technician.cs (All in one file or separate)
+// Models/User.cs → FINAL PERFECT VERSION
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -25,25 +25,27 @@ namespace ConstructionApp.Api.Models
         public string Role { get; set; } = "Customer"; // Customer, Technician, Admin
 
         [StringLength(20)]
-        public string Status { get; set; } = "Active"; // Active, Inactive, Banned
+        public string Status { get; set; } = "Active";
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // EMAIL VERIFICATION
+        // Profile Image - இது User table-ல இருக்கும் (Technician-க்கு தனியா இல்லை!)
+        [StringLength(1000)]
+        public string? ProfileImage { get; set; }
+
+        // Email Verification
         public string? VerificationToken { get; set; }
         public bool EmailConfirmed { get; set; } = false;
         public DateTime? TokenExpires { get; set; }
 
-        // RESET PASSWORD
+        // Password Reset
         public string? ResetToken { get; set; }
         public DateTime? ResetTokenExpires { get; set; }
 
-        // NAVIGATION PROPERTIES
-
+        // Navigation Properties
+        public Technician? Technician { get; set; }
         public Admin? Admin { get; set; }
-        public Technician? Technician { get; set; } // 1:1 with Technician
 
-        // BOOKINGS (Customer side)
         public ICollection<Booking> CustomerBookings { get; set; } = new List<Booking>();
     }
 
@@ -52,20 +54,18 @@ namespace ConstructionApp.Api.Models
         [Key]
         public int TechnicianID { get; set; }
 
-        public int UserID { get; set; } // Foreign Key to User
-
-        [StringLength(500)]
-        public string? ProfileImage { get; set; }
+        [ForeignKey("User")]
+        public int UserID { get; set; }
 
         public int ExperienceYears { get; set; } = 0;
 
         [Column(TypeName = "decimal(3,2)")]
-        public decimal RatingAverage { get; set; } = 0.0m; // 0.00 to 5.00
+        public decimal RatingAverage { get; set; } = 0.0m;
 
         public int TotalRatings { get; set; } = 0;
 
         [StringLength(20)]
-        public string AvailabilityStatus { get; set; } = "Available"; // Available, Busy, Offline
+        public string AvailabilityStatus { get; set; } = "Available";
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal WalletBalance { get; set; } = 0.00m;
@@ -73,14 +73,15 @@ namespace ConstructionApp.Api.Models
         public int TotalJobsCompleted { get; set; } = 0;
 
         [StringLength(20)]
-        public string VerificationStatus { get; set; } = "Pending"; // Pending, Verified, Rejected
+        public string VerificationStatus { get; set; } = "Pending";
 
         public DateTime? VerifiedAt { get; set; }
 
-        // NAVIGATION
+        // Navigation
         public User User { get; set; } = null!;
 
-        // Assigned Bookings (Technician side)
         public ICollection<Booking> AssignedBookings { get; set; } = new List<Booking>();
     }
+
+   
 }

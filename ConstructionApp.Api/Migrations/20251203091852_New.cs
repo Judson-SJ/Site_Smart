@@ -42,6 +42,7 @@ namespace ConstructionApp.Api.Migrations
                     Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ProfileImage = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     VerificationToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
                     TokenExpires = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -137,7 +138,6 @@ namespace ConstructionApp.Api.Migrations
                     TechnicianID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserID = table.Column<int>(type: "int", nullable: false),
-                    ProfileImage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ExperienceYears = table.Column<int>(type: "int", nullable: false),
                     RatingAverage = table.Column<decimal>(type: "decimal(3,2)", nullable: false),
                     TotalRatings = table.Column<int>(type: "int", nullable: false),

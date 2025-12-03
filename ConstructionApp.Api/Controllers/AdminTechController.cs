@@ -68,7 +68,7 @@ public class AdminTechController : ControllerBase
                 submittedAt = x.User.CreatedAt,
                 verificationStatus = x.VerificationStatus,
                 // If you have documents in another table, include them here.
-                documents = new [] { new { fileName = x.ProfileImage ?? "", url = x.ProfileImage ?? "" } }
+               // documents = new [] { new { fileName = x.ProfileImage ?? "", url = x.ProfileImage ?? "" } }
             })
             .FirstOrDefaultAsync();
 

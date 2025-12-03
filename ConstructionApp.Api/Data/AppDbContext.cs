@@ -50,7 +50,7 @@ namespace ConstructionApp.Api.Data
             modelBuilder.Entity<Technician>(entity =>
             {
                 entity.HasKey(t => t.TechnicianID);
-                entity.Property(t => t.ProfileImage).HasMaxLength(500);
+               // entity.Property(t => t.ProfileImage).HasMaxLength(500);
                 entity.Property(t => t.AvailabilityStatus).HasMaxLength(20).HasDefaultValue("Available");
                 entity.Property(t => t.VerificationStatus).HasMaxLength(20).HasDefaultValue("Pending");
                 entity.Property(t => t.RatingAverage).HasColumnType("decimal(3,2)");

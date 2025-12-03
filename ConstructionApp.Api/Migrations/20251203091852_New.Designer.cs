@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConstructionApp.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251202170149_New")]
+    [Migration("20251203091852_New")]
     partial class New
     {
         /// <inheritdoc />
@@ -292,10 +292,6 @@ namespace ConstructionApp.Api.Migrations
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
 
-                    b.Property<string>("ProfileImage")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<decimal>("RatingAverage")
                         .HasColumnType("decimal(3,2)");
 
@@ -362,6 +358,10 @@ namespace ConstructionApp.Api.Migrations
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ProfileImage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("ResetToken")
                         .HasColumnType("nvarchar(max)");

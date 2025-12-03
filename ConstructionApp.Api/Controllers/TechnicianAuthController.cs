@@ -63,7 +63,7 @@ namespace ConstructionApp.Api.Controllers
             var tech = new Technician
             {
                 UserID = user.UserID,
-                ProfileImage = null,
+                //ProfileImage = null,
                 ExperienceYears = 0,
                 RatingAverage = 0.0m,
                 TotalRatings = 0,
@@ -178,7 +178,7 @@ public async Task<IActionResult> Login([FromBody] LoginDto dto)
                         Technician = u.Technician == null ? null : new
                         {
                             u.Technician.TechnicianID,
-                            u.Technician.ProfileImage,
+                           // u.Technician.ProfileImage,
                             u.Technician.ExperienceYears,
                             u.Technician.RatingAverage,
                             u.Technician.TotalRatings,

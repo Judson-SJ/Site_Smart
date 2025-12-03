@@ -83,7 +83,7 @@ namespace ConstructionApp.Api.Controllers
                     {
                         u.Technician.TechnicianID,
                         u.Technician.VerificationStatus,
-                        u.Technician.ProfileImage,
+                        //u.Technician.ProfileImage,
                         u.Technician.ExperienceYears,
                         u.Technician.RatingAverage
                     },
@@ -133,7 +133,7 @@ namespace ConstructionApp.Api.Controllers
                     Technician = x.Technician == null ? null : new
                     {
                         x.Technician.TechnicianID,
-                        x.Technician.ProfileImage,
+                        //x.Technician.ProfileImage,
                         x.Technician.ExperienceYears,
                         x.Technician.RatingAverage,
                         x.Technician.TotalRatings,

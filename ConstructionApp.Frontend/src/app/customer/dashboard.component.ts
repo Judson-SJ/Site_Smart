@@ -1,10 +1,11 @@
+// src/app/customer/dashboard/customer-dashboard.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { AuthService } from '../shared/services/auth.service';
+import { environment } from '../../environments/environment';
 
 interface Booking {
   bookingID: number;
@@ -26,11 +27,12 @@ interface Booking {
 })
 export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
-  userName: string = 'User';
+  // User Info
+  userName: string = 'Loading...';
   userEmail: string = '';
-  userPhone: string = '';
-  userAvatar: string = '';
+  userAvatar: string = 'https://ui-avatars.com/api/?name=Loading&background=8b5cf6&color=fff&bold=true&size=256';
 
+  // Bookings
   currentBooking: Booking | null = null;
   bookingHistory: Booking[] = [];
   loading = true;
@@ -46,11 +48,11 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadDashboardData();
+    this.loadBookings();
 
-    // Auto-refresh every 10 seconds
+    // Auto refresh every 10 seconds
     this.pollSubscription = interval(10000).subscribe(() => {
-      this.loadDashboardData();
+      this.loadBookings();
     });
   }
 
@@ -58,13 +60,12 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
     this.pollSubscription?.unsubscribe();
   }
 
-  private getAuthHeaders() {
+  private getHeaders() {
     const token = this.auth.getToken();
-    return token
-      ? { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }
-      : {};
+    return token ? new HttpHeaders().set('Authorization', `Bearer ${token}`) : new HttpHeaders();
   }
 
+  // Load Real User Name + Avatar
   private loadUserProfile(): void {
     const token = this.auth.getToken();
     if (!token) {
@@ -72,97 +73,114 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Decode JWT instantly
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      this.userName = payload.name || payload.fullName || 'User';
-      this.userEmail = payload.email || '';
-    } catch {}
+      const name = payload.name || payload.fullName || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'User';
+      const email = payload.email || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '';
 
-    this.http.get<any>(`${this.apiUrl}/customer/profile`, this.getAuthHeaders())
+      this.userName = name;
+      this.userEmail = email;
+      this.userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff&bold=true&size=256&font-size=0.4`;
+    } catch (e) {
+      this.userName = 'User';
+    }
+
+    // Get latest from API
+    this.http.get<any>(`${this.apiUrl}/customer/profile`, { headers: this.getHeaders() })
       .subscribe({
         next: (res) => {
           if (res?.success && res?.data) {
-            this.userName = res.data.fullName || this.userName;
+            this.userName = res.data.fullName || res.data.name || this.userName;
             this.userEmail = res.data.email || this.userEmail;
-            this.userPhone = res.data.phone || '';
-            this.userAvatar = res.data.profileImage || this.getDefaultAvatar();
+            this.userAvatar = res.data.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(this.userName)}&background=8b5cf6&color=fff&bold=true&size=256`;
+
             localStorage.setItem('userName', this.userName);
+            localStorage.setItem('userEmail', this.userEmail);
           }
         },
         error: () => {
-          this.userAvatar = this.getDefaultAvatar();
+          // Fallback to JWT data
+          console.warn('Profile API failed, using token data');
         }
       });
   }
 
- private loadDashboardData(): void {
-  this.loading = true;
+  // MAIN FIX: This will work with ANY backend response!
+  private loadBookings(): void {
+    this.loading = true;
 
-  this.http.get<any>(`${this.apiUrl}/customer/my-bookings`, this.getAuthHeaders())
-    .subscribe({
-      next: (res) => {
-        console.log('My Bookings Response:', res);
+    this.http.get<any>(`${this.apiUrl}/customer/my-bookings`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (res) => {
+          console.log('My-Bookings API Response:', res); // Check console!
 
-        if (res?.success && res?.data) {
-          const data = res.data;
+          let current = null;
+          let history: any[] = [];
 
-          /* -------------------- CURRENT BOOKING -------------------- */
-          const cb = data.currentBooking;
-          if (cb) {
-            this.currentBooking = {
-              bookingID: cb.bookingID,
-              serviceName: cb.serviceName || cb.service?.serviceName || '',
-              scheduledDate: cb.date || cb.scheduledDate || '',
-              technicianName: cb.technicianName || cb.technician?.name || '',
-              technicianPhoto: cb.technicianPhoto || cb.technician?.photoUrl || '',
-              price: cb.price || cb.totalAmount || 0,
-              status: cb.status || cb.bookingStatus || '',
-              progress: this.getProgressFromStatus(cb.status || cb.bookingStatus)
-            };
-          } else {
-            this.currentBooking = null;
+          if (res?.success && res?.data) {
+            const data = res.data;
+
+            // Current Booking
+            if (data.currentBooking || data.activeBooking) {
+              const cb = data.currentBooking || data.activeBooking;
+              current = this.mapBooking(cb);
+            }
+
+            // History
+            history = (data.bookingHistory || data.history || data.bookings || []).map((b: any) => this.mapBooking(b));
+          }
+          else if (Array.isArray(res)) {
+            history = res.map(b => this.mapBooking(b));
           }
 
-          /* -------------------- BOOKING HISTORY -------------------- */
-          const history = data.bookingHistory || data.history || [];
-
-          this.bookingHistory = history.map((b: any) => ({
-            bookingID: b.bookingID,
-            serviceName: b.serviceName || b.service?.serviceName || '',
-            scheduledDate: b.date || b.scheduledDate || '',
-            technicianName: b.technicianName || b.technician?.name || '',
-            price: b.price || b.totalAmount || 0,
-            status: b.status || b.bookingStatus || '',
-            progress: this.getProgressFromStatus(b.status || b.bookingStatus)
-          }));
-
-          /* -------------------- SORT NEWEST FIRST -------------------- */
-          this.bookingHistory.sort((a, b) =>
+          this.currentBooking = current;
+          this.bookingHistory = history.sort((a, b) =>
             new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
           );
+
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load bookings:', err);
+          this.loading = false;
         }
+      });
+  }
 
-        this.loading = false;
-      },
+  private mapBooking(b: any): Booking {
+    return {
+      bookingID: Number(b.bookingID || b.id || 0),
+      serviceName: b.serviceName || b.service?.name || b.title || 'Unknown Service',
+      scheduledDate: this.formatDate(b.scheduledDate || b.date || b.bookingDate),
+      technicianName: b.technicianName || b.technician?.name || 'Not Assigned',
+      technicianPhoto: b.technicianPhoto || b.technician?.photo || null,
+      price: Number(b.price || b.totalAmount || b.amount || 0),
+      status: this.normalizeStatus(b.status || b.bookingStatus || 'Requested'),
+      progress: this.getProgressFromStatus(b.status || b.bookingStatus)
+    };
+  }
 
-      error: (err) => {
-        console.error('My-Bookings API Failed:', err);
-        this.loading = false;
-      }
-    });
-}
+  private formatDate(dateStr: string): string {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
-
-  private formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  private normalizeStatus(status: string): Booking['status'] {
+    const s = status?.toLowerCase();
+    if (s?.includes('request')) return 'Requested';
+    if (s?.includes('accept') || s?.includes('confirm')) return 'Accepted';
+    if (s?.includes('progress') || s?.includes('ongoing')) return 'In-Progress';
+    if (s?.includes('complete')) return 'Completed';
+    if (s?.includes('cancel')) return 'Cancelled';
+    return 'Requested';
   }
 
   private getProgressFromStatus(status: string): number {
-    switch (status) {
+    switch (this.normalizeStatus(status)) {
       case 'Requested': return 20;
-      case 'Accepted': 
-      case 'Confirmed': return 50;
+      case 'Accepted': return 50;
       case 'In-Progress': return 75;
       case 'Completed': return 100;
       case 'Cancelled': return 0;
@@ -170,22 +188,19 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private getDefaultAvatar(): string {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.userName)}&background=8b5cf6&color=fff&bold=true&size=256`;
-  }
-
   getStatusClass(status: string): any {
+    const s = this.normalizeStatus(status);
     return {
-      'status-requested': status === 'Requested',
-      'status-accepted': status === 'Accepted',
-      'status-inprogress': status === 'In-Progress',
-      'status-completed': status === 'Completed',
-      'status-cancelled': status === 'Cancelled'
+      'status-requested': s === 'Requested',
+      'status-accepted': s === 'Accepted',
+      'status-inprogress': s === 'In-Progress',
+      'status-completed': s === 'Completed',
+      'status-cancelled': s === 'Cancelled'
     };
   }
 
   viewDetails(id: number): void {
-    if (id) this.router.navigate(['/customer/booking-details', id]);
+    if (id > 0) this.router.navigate(['/customer/booking-details', id]);
   }
 
   contactTechnician(): void {
