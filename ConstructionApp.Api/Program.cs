@@ -1,6 +1,7 @@
 using ConstructionApp.Api.Data;
 using ConstructionApp.Api.Helpers;
 using ConstructionApp.Api.Middlewares;
+using ConstructionApp.Api.Repositories;
 using ConstructionApp.Api.Repositories.Implementations;
 using ConstructionApp.Api.Repositories.Interfaces;
 using ConstructionApp.Api.Services;
@@ -58,10 +59,16 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+
 
 // BOOKING SYSTEM — இவை இல்லாம இருந்ததாலதான் error வந்துச்சு!
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<BookingService>();
+
+// Program.cs
+builder.Services.AddScoped<ITechnicianJobRepository, TechnicianJobRepository>();
+builder.Services.AddScoped<TechnicianJobService>();
 
 
 builder.Services.AddScoped<AuthService>();
@@ -69,6 +76,7 @@ builder.Services.AddScoped<ServiceManagementService>();
 builder.Services.AddScoped<CategoryManagementService>();
 builder.Services.AddScoped<JwtTokenHelper>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<CustomerService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

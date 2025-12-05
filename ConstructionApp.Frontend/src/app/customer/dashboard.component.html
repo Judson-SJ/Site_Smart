@@ -125,38 +125,64 @@
       </div>
     </ng-template>
 
-    <!-- Booking History -->
-    <section class="history-section mt-16">
-      <div class="flex justify-between items-center mb-8">
-        <h2 class="text-3xl font-bold text-[#c4b5fd]">Booking History</h2>
-        <div class="search-box">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="Search past bookings..." class="bg-transparent outline-none text-white">
-        </div>
-      </div>
-
-      <div class="table-container glass rounded-3xl overflow-hidden">
-        <table class="history-table w-full">
+    <!-- Booking History Table — 100% PERFECT ALIGNMENT + RESPONSIVE! -->
+    <div class="table-container glass rounded-3xl overflow-hidden mt-8">
+      <div class="overflow-x-auto">
+        <table class="history-table w-full min-w-[800px]">
           <thead>
-            <tr class="bg-[#8b5cf6]/20">
-              <th>Service</th>
-              <th>Date</th>
-              <th>Technician</th>
-              <th>Amount</th>
-              <th>Status</th>
+            <tr class="bg-[#8b5cf6]/20 text-left">
+              <th class="px-8 py-6 text-lg font-bold text-white">Service</th>
+              <th class="px-8 py-6 text-lg font-bold text-white">Date</th>
+              <th class="px-8 py-6 text-lg font-bold text-white">Technician</th>
+              <th class="px-8 py-6 text-lg font-bold text-white text-right">Amount</th>
+              <th class="px-8 py-6 text-lg font-bold text-white text-center">Status</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let b of bookingHistory"
-                class="hover:bg-white/5 transition cursor-pointer"
+                class="border-b border-white/10 hover:bg-white/5 transition cursor-pointer"
                 (click)="viewDetails(b.bookingID)">
 
-              <td class="font-semibold text-white">{{ b.serviceName }}</td>
-              <td class="text-gray-300">{{ b.scheduledDate }}</td>
-              <td>{{ b.technicianName }}</td>
-              <td class="font-bold text-[#8b5cf6]">Rs. {{ b.price | number:'1.0-0' }}</td>
-              <td>
-                <span class="status-badge px-5 py-2 rounded-full text-sm font-bold"
+              <!-- Service Name -->
+              <td class="px-8 py-6">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#a78bfa] rounded-xl flex items-center justify-center">
+                    <i class="fas fa-tools text-white text-xl"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-white text-lg">{{ b.serviceName }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Date -->
+              <td class="px-8 py-6 text-gray-300">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-calendar-alt text-[#8b5cf6]"></i>
+                  <span class="font-medium">{{ b.scheduledDate }}</span>
+                </div>
+              </td>
+
+              <!-- Technician -->
+              <td class="px-8 py-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
+                    {{ b.technicianName.charAt(0) }}
+                  </div>
+                  <span class="text-white font-medium">{{ b.technicianName }}</span>
+                </div>
+              </td>
+
+              <!-- Amount — Right Aligned -->
+              <td class="px-8 py-6 text-right">
+                <span class="text-2xl font-bold text-[#8b5cf6]">
+                  Rs. {{ b.price | number:'1.0-0' }}
+                </span>
+              </td>
+
+              <!-- Status Badge — Center -->
+              <td class="px-8 py-6 text-center">
+                <span class="status-badge px-6 py-3 rounded-full text-sm font-bold inline-block min-w-[120px]"
                       [ngClass]="getStatusClass(b.status)">
                   {{ b.status }}
                 </span>
@@ -165,6 +191,12 @@
           </tbody>
         </table>
       </div>
-    </section>
+
+      <!-- No History Message -->
+      <div *ngIf="bookingHistory.length === 0" class="text-center py-20 text-gray-400">
+        <i class="fas fa-history text-8xl mb-6 opacity-50"></i>
+        <p class="text-2xl">No booking history yet</p>
+      </div>
+    </div>
   </main>
 </div>

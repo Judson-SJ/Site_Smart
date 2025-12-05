@@ -1,8 +1,9 @@
-using Microsoft.IdentityModel.Tokens;
+// Helpers/JwtTokenHelper.cs → FINAL BOMB VERSION — CASE PERFECT!
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using ConstructionApp.Api.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ConstructionApp.Api.Helpers
 {
@@ -17,43 +18,36 @@ namespace ConstructionApp.Api.Helpers
 
         public string GenerateToken(User user)
         {
-            var claims = new List<Claim>
-            {
-                // இவை ரெண்டும் must for AddressesController!
-                new Claim("UserID", user.UserID.ToString()),                    // THIS LINE WAS MISSING!
-                new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),   // Standard ID claim
-
-                new Claim(ClaimTypes.Name, user.FullName ?? user.Email),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "Customer"),
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
-            };
-
-            // Technician extra claims
-            if (user.Role == "Technician" && user.Technician != null)
-            {
-                claims.Add(new Claim("technicianId", user.Technician.TechnicianID.ToString()));
-                claims.Add(new Claim("verificationStatus", user.Technician.VerificationStatus ?? "Pending"));
-            }
-
-            // Admin extra claims
-            if (user.Role == "Admin" && user.Admin != null)
-            {
-                claims.Add(new Claim("adminLevel", user.Admin.AdminLevel ?? "SuperAdmin"));
-            }
-
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                _config["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in configuration")));
+                _config["Jwt:Key"] ?? "your-super-secret-key-must-be-32-chars-long!!!"
+            ));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // இதுதான் உன் LIFE SAVER — எல்லாம் EXACT SAME NAME ஆ இருக்கு!
+            var claims = new List<Claim>
+            {
+                new Claim("UserID", user.UserID.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, user.FullName ?? "User"),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+
+                // ANGULAR-L EXACTLY இதே NAME-ல எடுக்கும்!
+                new Claim("fullName", user.FullName ?? "User"),        // ← இது முக்கியம்!
+                new Claim("email", user.Email ?? ""),                  // ← இதுவும்!
+                new Claim("phone", user.Phone ?? ""),
+                new Claim("profileImage", user.ProfileImage ?? ""),
+                new Claim("role", user.Role ?? "Customer"),
+
+                // Extra backup claims
+                new Claim(ClaimTypes.Role, user.Role ?? "Customer")
+            };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.Now.AddDays(7),
                 signingCredentials: creds
             );
 

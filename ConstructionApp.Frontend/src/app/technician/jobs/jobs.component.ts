@@ -1,7 +1,10 @@
-// src/app/technician/jobs/jobs.component.ts
+// src/app/technician/jobs/jobs.component.ts → FINAL LIVE + REAL BACKEND!
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../shared/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 type Job = {
   bookingID: number;
@@ -11,7 +14,9 @@ type Job = {
   description?: string;
   status: 'new' | 'accepted' | 'declined' | 'inprogress' | 'completed';
   customerName?: string;
+  customerPhone?: string;
   createdAt?: string;
+  preferredDate?: string;
 };
 
 @Component({
@@ -27,91 +32,144 @@ export class JobsComponent implements OnInit {
   jobs: Job[] = [];
   filteredJobs: Job[] = [];
 
-  // detail modal
   showDetail = false;
   activeJob: Job | null = null;
+  loading = true;
 
-  constructor(private fb: FormBuilder) {}
+  private apiUrl = environment.apiBaseUrl.replace(/\/$/, '');
+
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private auth: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.filterForm = this.fb.group({
-      status: ['all']
-    });
+    this.filterForm = this.fb.group({ status: ['all'] });
+    this.loadJobs();
 
-    this.setupMockData();
-    this.applyFilters();
-
-    // react to filter changes
     this.filterForm.get('status')!.valueChanges.subscribe(() => this.applyFilters());
   }
 
-  setupMockData() {
-    const today = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    this.jobs = [
-      { bookingID: 201, title: 'Fix leaking sink', address: '12 Lakeview Rd', rate: 2500, description: 'Kitchen sink leak — replace P-trap & test.', status: 'new', customerName: 'Mr. Silva', createdAt: iso(today) },
-      { bookingID: 202, title: 'Replace light fittings', address: '45 Hill St', rate: 1800, description: 'Replace 4 ceiling lights', status: 'new', customerName: 'Mrs. Perera', createdAt: iso(today) },
-      { bookingID: 203, title: 'AC service', address: '3 Palm Ave', rate: 6000, description: 'Full AC maintenance', status: 'accepted', customerName: 'K. Fernando', createdAt: iso(new Date(today.getTime() - 86400000)) },
-      { bookingID: 204, title: 'Install shelf', address: '78 River Rd', rate: 3200, description: 'Custom wooden shelf', status: 'new', customerName: 'S. Kumar', createdAt: iso(new Date(today.getTime() - 2 * 86400000)) }
-    ];
+  loadJobs(): void {
+    const token = this.auth.getToken();
+    if (!token) {
+      alert('Please login again');
+      return;
+    }
+
+    this.loading = true;
+
+    this.http.get<any>(`${this.apiUrl}/technician/jobs`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).subscribe({
+      next: (res) => {
+        if (res?.success && res?.data) {
+          this.jobs = res.data.map((j: any) => ({
+            bookingID: j.bookingID,
+            title: j.title,
+            address: j.address,
+            rate: j.rate,
+            description: j.description,
+            status: j.status as Job['status'],
+            customerName: j.customerName,
+            customerPhone: j.customerPhone,
+            createdAt: j.createdAt,
+            preferredDate: j.preferredDate
+          }));
+          this.applyFilters();
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load jobs:', err);
+        alert('Failed to load jobs');
+        this.loading = false;
+      }
+    });
   }
 
-  applyFilters() {
+  applyFilters(): void {
     const status = this.filterForm.get('status')!.value;
-    const q = (this.searchText || '').trim().toLowerCase();
+    const q = this.searchText.trim().toLowerCase();
 
     this.filteredJobs = this.jobs.filter(j => {
       if (status !== 'all' && j.status !== status) return false;
       if (!q) return true;
       return (
-        (j.title || '').toLowerCase().includes(q) ||
-        (j.address || '').toLowerCase().includes(q) ||
-        (String(j.bookingID) || '').includes(q) ||
+        j.title.toLowerCase().includes(q) ||
+        j.address.toLowerCase().includes(q) ||
+        String(j.bookingID).includes(q) ||
         (j.customerName || '').toLowerCase().includes(q)
       );
     });
   }
 
-  onSearchChange(value: string) {
+  onSearchChange(value: string): void {
     this.searchText = value;
     this.applyFilters();
   }
 
-  openDetail(job: Job) {
+  openDetail(job: Job): void {
     this.activeJob = job;
     this.showDetail = true;
     document.body.style.overflow = 'hidden';
   }
 
-  closeDetail() {
+  closeDetail(): void {
     this.showDetail = false;
     this.activeJob = null;
     document.body.style.overflow = '';
   }
 
-  acceptJob(job: Job) {
-    if (job.status === 'accepted') return;
-    // in real app call service here
-    job.status = 'accepted';
-    this.applyFilters();
-    alert(`Accepted job ${job.bookingID}`);
+  acceptJob(job: Job): void {
+    if (job.status !== 'new') return;
+
+    this.http.post(`${this.apiUrl}/technician/jobs/${job.bookingID}/accept`, {}, {
+      headers: { Authorization: `Bearer ${this.auth.getToken()}` }
+    }).subscribe({
+      next: () => {
+        job.status = 'accepted';
+        this.applyFilters();
+        alert(`Job #${job.bookingID} accepted!`);
+      },
+      error: () => alert('Failed to accept job')
+    });
   }
 
-  declineJob(job: Job) {
-    if (job.status === 'declined') return;
-    // in real app call service here
-    job.status = 'declined';
+  declineJob(job: Job): void {
+    if (job.status !== 'new') return;
+    // You can add decline endpoint or just filter out
+    this.jobs = this.jobs.filter(j => j.bookingID !== job.bookingID);
     this.applyFilters();
+    alert(`Job #${job.bookingID} declined`);
   }
 
-  updateJobStatus(job: Job, status: Job['status']) {
-    job.status = status;
-    this.applyFilters();
-    if (this.activeJob && this.activeJob.bookingID === job.bookingID) {
-      this.activeJob = { ...job };
-    }
+  updateJobStatus(job: Job, status: Job['status']): void {
+    if (!['inprogress', 'completed'].includes(status)) return;
+
+    this.http.patch(`${this.apiUrl}/technician/jobs/${job.bookingID}/status`, 
+      { status }, 
+      { headers: { Authorization: `Bearer ${this.auth.getToken()}` } }
+    ).subscribe({
+      next: () => {
+        job.status = status;
+        this.applyFilters();
+        if (this.activeJob?.bookingID === job.bookingID) {
+          this.activeJob = { ...job };
+        }
+        alert(`Status updated to ${status}`);
+      },
+      error: () => alert('Failed to update status')
+    });
   }
 
-  // helper for grouping or labels in template
-  isNew(job: Job) { return job.status === 'new'; }
+  isNew(job: Job): boolean {
+    return job.status === 'new';
+  }
+
+  // Refresh button
+  refresh(): void {
+    this.loadJobs();
+  }
 }

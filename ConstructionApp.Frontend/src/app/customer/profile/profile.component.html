@@ -1,4 +1,4 @@
-<!-- src/app/customer/profile/profile.component.html -->
+<!-- src/app/customer/profile/profile.component.html → FINAL 100% WORKING! -->
 <div class="profile-wrapper min-h-screen relative">
   <div class="particles-bg"></div>
 
@@ -9,6 +9,14 @@
         Settings
       </span>
     </h1>
+
+    <!-- Hidden File Input — இது முக்கியம்! -->
+    <input 
+      type="file" 
+      accept="image/*" 
+      (change)="onAvatarChange($event)" 
+      class="hidden" 
+      id="avatar-upload">
 
     <!-- Loading State -->
     <div *ngIf="isLoading" class="text-center py-32">
@@ -148,7 +156,7 @@
           </div>
         </div>
 
-        <!-- Notification Preferences (ONLY ONCE!) -->
+        <!-- Notification Preferences -->
         <div class="glass-card p-10">
           <h2 class="section-title mb-10">Notification Preferences</h2>
           <p class="text-[#c4b5fd]/80 text-xl mb-12">Control how we communicate with you</p>

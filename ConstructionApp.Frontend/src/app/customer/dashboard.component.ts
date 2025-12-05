@@ -148,18 +148,19 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  private mapBooking(b: any): Booking {
-    return {
-      bookingID: Number(b.bookingID || b.id || 0),
-      serviceName: b.serviceName || b.service?.name || b.title || 'Unknown Service',
-      scheduledDate: this.formatDate(b.scheduledDate || b.date || b.bookingDate),
-      technicianName: b.technicianName || b.technician?.name || 'Not Assigned',
-      technicianPhoto: b.technicianPhoto || b.technician?.photo || null,
-      price: Number(b.price || b.totalAmount || b.amount || 0),
-      status: this.normalizeStatus(b.status || b.bookingStatus || 'Requested'),
-      progress: this.getProgressFromStatus(b.status || b.bookingStatus)
-    };
-  }
+ // mapBooking method-ல
+private mapBooking(b: any): Booking {
+  return {
+    bookingID: b.BookingID || b.bookingID || 0,
+    serviceName: b.ServiceName || b.serviceName || 'Unknown',
+    scheduledDate: this.formatDate(b.PreferredStartDateTime || b.date),
+    technicianName: b.TechnicianName || 'Pending Assignment',  // ← இப்போ API-ல correct ஆ வரும்!
+    technicianPhoto: b.TechnicianPhoto || null,
+    price: Number(b.TotalAmount || b.totalAmount || 0),
+    status: this.normalizeStatus(b.Status || b.status),
+    progress: b.Progress || this.getProgressFromStatus(b.Status)
+  };
+}
 
   private formatDate(dateStr: string): string {
     if (!dateStr) return 'N/A';
