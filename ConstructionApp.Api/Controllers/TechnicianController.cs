@@ -285,25 +285,64 @@ public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
     }
 }
 
-[Authorize]
-[HttpGet("my-address")]
-public async Task<IActionResult> GetMyAddress()
+// Add inside TechnicianController class
+[HttpGet("verify-details")]
+public async Task<IActionResult> GetVerifyDetails()
 {
-    var userId = int.Parse(User.FindFirst("UserID")!.Value);
+    var userIdClaim = User.FindFirst("UserID") ?? User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+    if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+        return Unauthorized(new { success = false, message = "Unable to determine user from token" });
 
-    var addr = await _context.Addresses.FirstOrDefaultAsync(a => a.UserID == userId);
+    try
+    {
+        // load technician
+        var tech = await _context.Technicians
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.UserID == userId);
 
-    if (addr == null)
-        return Ok(null);
+        // load address
+        var addr = await _context.Addresses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.UserID == userId);
 
-    return Ok(new {
-        street = addr.Street,
-        city = addr.City,
-        state = addr.State,
-        postalCode = addr.PostalCode,
-        country = addr.Country
-    });
+        // load categories linked to the technician
+        var catNames = await _context.TechnicianCategories
+            .Where(tc => tc.Technician != null && tc.Technician.UserID == userId && tc.IsActive)
+            .Include(tc => tc.Category)
+            .Select(tc => tc.Category.CategoryName)
+            .ToListAsync();
+
+        var result = new
+        {
+            success = true,
+            data = new
+            {
+                technicianId = tech?.TechnicianID,
+                idProof = tech?.IDProof,
+                certificate = tech?.Certificate,
+                experienceYears = tech?.ExperienceYears,
+                verificationStatus = tech?.VerificationStatus,
+                address = addr == null ? null : new
+                {
+                    street = addr.Street,
+                    city = addr.City,
+                    state = addr.State,
+                    postalCode = addr.PostalCode,
+                    country = addr.Country
+                },
+                categories = catNames
+            }
+        };
+
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "GetVerifyDetails failed for user {UserId}", userId);
+        return StatusCode(500, new { success = false, message = "Failed to load verification details" });
+    }
 }
+
 
 
     }

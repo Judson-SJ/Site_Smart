@@ -22,8 +22,7 @@ export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
   submitting = false;
 
-  avatarPreview = this.getDefaultAvatar('User'); // implement getDefaultAvatar below
-
+  avatarPreview: string = '';
   avatarFile: File | null = null;
 
   showPasswordSection = false;
@@ -33,12 +32,15 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
+
+    // load initial avatar from logged-in user
+    const user = this.auth.getCurrentUser();
+    this.avatarPreview =
+      user?.profileImage || this.getDefaultAvatar(user?.fullName || 'User');
+
     this.loadProfile();
   }
 
-  // -------------------------------
-  // FORM INITIALIZATION
-  // -------------------------------
   private initForm() {
     this.profileForm = this.fb.group({
       fullName: ['', Validators.required],
@@ -64,62 +66,72 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // -------------------------------
-  // GETTERS
-  // -------------------------------
+  // ---------- GETTERS used in template ----------
   get passwordGroup(): FormGroup {
     return this.profileForm.get('passwordGroup') as FormGroup;
   }
+  get newPassword() { return this.passwordGroup.get('newPassword'); }
 
   get fullName() { return this.profileForm.get('fullName'); }
   get email() { return this.profileForm.get('email'); }
   get phone() { return this.profileForm.get('phone'); }
-  get address() { return this.profileForm.get('address'); }
-  get newPassword() { return this.passwordGroup.get('newPassword'); }
-  get confirmPassword() { return this.passwordGroup.get('confirmPassword'); }
 
-  // -------------------------------
-  // LOAD USER DATA INTO FORM
-  // -------------------------------
+  // -----------------------------------------
+  // LOAD PROFILE + ADDRESS
+  // -----------------------------------------
   loadProfile() {
-  const user = this.auth.getCurrentUser();
-  if (!user) return;
+    const user = this.auth.getCurrentUser();
+    if (!user) return;
 
-  this.avatarPreview = user.profileImage || '/assets/avatar.png';
+    this.avatarPreview = user.profileImage || '/assets/avatar.png';
 
-  // Load basic user data
-  this.profileForm.patchValue({
-    fullName: user.fullName,
-    email: user.email,
-    phone: user.phone
-  });
+    this.profileForm.patchValue({
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone
+    });
 
-  // 🔥 NOW LOAD ADDRESS FROM API
-  this.auth.getMyAddress().subscribe({
-    next: (addr: any) => {
-      console.log("Fetched address:", addr);
+    this.auth.getMyAddress().subscribe({
+      next: (addrResp: any) => {
+        console.log('Fetched address:', addrResp);
 
-      if (addr) {
+        let addressObj: any = null;
+
+        if (addrResp?.data && Array.isArray(addrResp.data)) {
+          addressObj = addrResp.data[0];
+        } else if (Array.isArray(addrResp)) {
+          addressObj = addrResp[0];
+        } else if (addrResp?.street) {
+          addressObj = addrResp;
+        }
+
         this.profileForm.patchValue({
           address: {
-            street: addr.street || '',
-            city: addr.city || '',
-            state: addr.state || '',
-            postalCode: addr.postalCode || '',
-            country: addr.country || 'Sri Lanka'
+            street: addressObj?.street || '',
+            city: addressObj?.city || '',
+            state: addressObj?.state || '',
+            postalCode: addressObj?.postalCode || '',
+            country: addressObj?.country || 'Sri Lanka'
+          }
+        });
+      },
+      error: () => {
+        this.profileForm.patchValue({
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            country: 'Sri Lanka'
           }
         });
       }
-    },
-    error: err => console.error("Address load error:", err)
-  });
-}
+    });
+  }
 
-
-
-  // -------------------------------
+  // -----------------------------------------
   // PASSWORD VALIDATION
-  // -------------------------------
+  // -----------------------------------------
   passwordsMatchValidator(group: AbstractControl) {
     const newPwd = group.get('newPassword')?.value;
     const confirm = group.get('confirmPassword')?.value;
@@ -127,9 +139,9 @@ export class ProfileComponent implements OnInit {
     return newPwd === confirm ? null : { mismatch: true };
   }
 
-  // -------------------------------
+  // -----------------------------------------
   // AVATAR UPLOAD + PREVIEW
-  // -------------------------------
+  // -----------------------------------------
   onAvatarSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -143,46 +155,44 @@ export class ProfileComponent implements OnInit {
   }
 
   uploadAvatar(): Promise<string | null> {
-  return new Promise((resolve) => {
-    if (!this.avatarFile) return resolve(null);
+    return new Promise(resolve => {
+      if (!this.avatarFile) return resolve(null);
 
-    const form = new FormData();
-    form.append('file', this.avatarFile);
+      const form = new FormData();
+      form.append('file', this.avatarFile);
 
-    this.auth.uploadTechnicianAvatar(form).subscribe({
-      next: (res: any) => {
-        const url = res?.data?.url || res?.url || null;
-        resolve(url);
-      },
-      error: () => resolve(null)
+      this.auth.uploadTechnicianAvatar(form).subscribe({
+        next: (res: any) => {
+          const url =
+            res?.data?.url ||
+            res?.url ||
+            res?.profileImage ||
+            null;
+
+          resolve(url);
+        },
+        error: () => resolve(null)
+      });
     });
-  });
-}
-
-
+  }
 
   resetAvatar() {
     this.avatarFile = null;
     this.avatarPreview = '/assets/avatar.png';
   }
 
-  // -------------------------------
-  // SHOW / HIDE SECTIONS
-  // -------------------------------
   togglePasswordSection() {
     this.showPasswordSection = !this.showPasswordSection;
-    if (!this.showPasswordSection) {
-      this.passwordGroup.reset();
-    }
+    if (!this.showPasswordSection) this.passwordGroup.reset();
   }
 
   toggleAddressSection() {
     this.showAddressSection = !this.showAddressSection;
   }
 
-  // -------------------------------
+  // -----------------------------------------
   // SAVE PROFILE
-  // -------------------------------
+  // -----------------------------------------
   async saveProfile() {
     if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
@@ -191,7 +201,6 @@ export class ProfileComponent implements OnInit {
 
     this.submitting = true;
 
-    // handle avatar upload first
     let uploadedImageUrl = await this.uploadAvatar();
 
     const payload: any = {
@@ -212,37 +221,57 @@ export class ProfileComponent implements OnInit {
       payload.profileImage = uploadedImageUrl;
     }
 
-    // Password change
-    const pw = this.passwordGroup.value;
-    if (pw.newPassword) {
-      payload.currentPassword = pw.currentPassword;
-      payload.newPassword = pw.newPassword;
-    }
-
-    // Send to backend
     this.auth.updateTechnicianProfile(payload).subscribe({
       next: (res: any) => {
-  const pw = this.passwordGroup.value;
+        const pw = this.passwordGroup.value;
 
-  // If password changed → logout
-  if (pw.newPassword) {
-    alert("Password changed successfully! Please login again.");
-    this.auth.logout();
-    return;
-  }
+        if (pw.newPassword) {
+          alert('Password changed successfully! Please login again.');
+          this.auth.logout();
+          return;
+        }
 
-  // Update UI with new profile data
-  this.auth.updateCurrentUser({
-    fullName: payload.fullName,
-    phone: payload.phone,
-    profileImage: uploadedImageUrl ?? undefined
-  });
+        // -------- FIXED: Avatar update -----------
 
-  alert("Profile updated successfully!");
-  this.submitting = false;
-  this.saved.emit();
-},
+        let returnedUrl =
+          res?.data?.profileImage ||
+          res?.data?.url ||
+          uploadedImageUrl ||
+          null;
 
+        if (returnedUrl && returnedUrl.startsWith('/')) {
+          returnedUrl = window.location.origin + returnedUrl;
+        }
+
+        const finalImageUrl = returnedUrl
+          ? `${returnedUrl}${returnedUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : undefined;
+
+        // Build update object and only include profileImage when present
+        const updateObj: any = {
+          fullName: payload.fullName,
+          phone: payload.phone
+        };
+
+        if (finalImageUrl) {
+          updateObj.profileImage = finalImageUrl;
+          localStorage.setItem('userPhoto', finalImageUrl);
+          this.avatarPreview = finalImageUrl;
+        }
+
+        // Update global AuthService (won't overwrite profileImage if absent)
+        this.auth.updateCurrentUser(updateObj);
+
+        console.log("PROFILE UPDATED:", {
+          returnedUrl,
+          finalImageUrl,
+          currentUser: this.auth.getCurrentUser()
+        });
+
+        alert('Profile updated successfully!');
+        this.submitting = false;
+        this.saved.emit();
+      },
 
       error: (err) => {
         console.error(err);
@@ -252,15 +281,18 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // -------------------------------
-  // RESET FORM
-  // -------------------------------
   resetForm() {
     this.profileForm.reset({
       fullName: '',
       email: '',
       phone: '',
-      address: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'Sri Lanka'
+      },
       passwordGroup: {
         currentPassword: '',
         newPassword: '',
@@ -270,9 +302,9 @@ export class ProfileComponent implements OnInit {
     this.resetAvatar();
     this.showPasswordSection = false;
   }
-  private getDefaultAvatar(name: string): string {
-  const n = encodeURIComponent((name || 'User').trim());
-  return `https://ui-avatars.com/api/?name=${n}&background=8b5cf6&color=fff&bold=true&size=256&rounded=true`;
-}
 
+  private getDefaultAvatar(name: string): string {
+    const n = encodeURIComponent((name || 'User').trim());
+    return `https://ui-avatars.com/api/?name=${n}&background=8b5cf6&color=fff&bold=true&size=256&rounded=true`;
+  }
 }

@@ -46,7 +46,7 @@ export class AuthService {
     this.loadUserFromToken();
   }
 
-  // --- Auth API methods ---
+  // --- AUTH METHODS ---
   register(payload: any): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/Auth/register`, payload);
   }
@@ -67,32 +67,36 @@ export class AuthService {
     );
   }
 
-  private handleAuthSuccess(res: AuthResponse, isTechnician = false): void {
+  private handleAuthSuccess(res: AuthResponse, isTechnician: boolean = false): void {
     if (res.success && (res.token || res.data?.token)) {
       const token = res.token || res.data?.token;
       const role = res.role || res.data?.role || (isTechnician ? 'Technician' : 'Customer');
 
-      const technician = res.data?.technician;
-      if (technician) {
-        localStorage.setItem('technicianData', JSON.stringify(technician));
-      }
+      // technician id can be in multiple shapes — be defensive
+      const technicianId =
+        (res.data?.technicianId !== undefined && res.data?.technicianId !== null)
+          ? String(res.data.technicianId)
+          : (res.data?.technician?.technicianID !== undefined && res.data?.technician?.technicianID !== null)
+            ? String(res.data.technician.technicianID)
+            : null;
 
-      const technicianId = technician?.technicianID?.toString();
+      localStorage.setItem(this.tokenKey, token);
+      localStorage.setItem(this.roleKey, role);
       if (technicianId) {
         localStorage.setItem(this.techKey, technicianId);
         this.technicianId$.next(technicianId);
       }
-
-      localStorage.setItem(this.tokenKey, token);
-      localStorage.setItem(this.roleKey, role);
+      if (res.data?.verificationStatus) {
+        localStorage.setItem(this.techStatusKey, res.data.verificationStatus);
+      }
 
       this.userRole$.next(role);
-      // decode token and populate current user subject
+      // load & normalize user from token
       this.loadUserFromToken();
     }
   }
 
-  // decode token -> populate current user (robust)
+  // --- TOKEN & USER ---
   private loadUserFromToken(): void {
     const token = this.getToken();
     if (!token) {
@@ -100,53 +104,50 @@ export class AuthService {
       return;
     }
 
+    // quick sanity check for JWT structure
+    if (typeof token !== 'string' || token.split('.').length < 3) {
+      console.warn('AuthService: malformed token, clearing user state (but NOT force-logout).');
+      this.currentUserSubject.next(null);
+      return;
+    }
+
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      // normalize email extraction
-      const extractEmail = (raw: any): string => {
-        if (!raw && raw !== '') return '';
-        if (Array.isArray(raw)) {
-          const first = raw.map((r: any) => String(r ?? '').trim()).find((r: string) => r.length > 0);
-          return first ?? '';
-        }
-        if (typeof raw === 'string') {
-          const firstPart = raw.split(',').map(s => s.trim()).find(s => s.length > 0);
-          return firstPart ?? '';
-        }
-        return String(raw ?? '');
-      };
 
-      const rawEmail =
-        payload.email ??
-        payload.Email ??
-        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ??
-        '';
-
-      const email = extractEmail(rawEmail);
+      // Normalize email claim: it can be string or array in some backends
+      let normalizedEmail = '';
+      if (payload?.email) {
+        normalizedEmail = Array.isArray(payload.email) ? String(payload.email[0] ?? '') : String(payload.email ?? '');
+      } else if (payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']) {
+        const alt = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
+        normalizedEmail = Array.isArray(alt) ? String(alt[0] ?? '') : String(alt ?? '');
+      } else {
+        normalizedEmail = '';
+      }
 
       const user: CurrentUser = {
-        userId: Number(payload.UserID || payload.userID || payload.sub || 0),
-        fullName: payload.fullName || payload.FullName || payload.name || 'User',
-        email,
-        phone: payload.phone || payload.Phone || '',
-        profileImage: payload.profileImage || payload.ProfileImage || '',
+        userId: Number(payload.UserID || payload.sub || payload.userId || 0),
+        fullName: payload.fullName || payload.FullName || payload.name || (localStorage.getItem('userName') ?? 'User'),
+        email: normalizedEmail,
+        phone: payload.phone || payload.Phone || (localStorage.getItem('userPhone') ?? ''),
+        profileImage: payload.profileImage || payload.ProfileImage || (localStorage.getItem('userPhoto') ?? ''),
         role: payload.role || payload.Role || localStorage.getItem(this.roleKey) || 'Customer'
       };
 
       this.currentUserSubject.next(user);
 
-      // cache small bits for legacy code that reads localStorage
-      localStorage.setItem('userName', user.fullName);
-      localStorage.setItem('userEmail', user.email);
-      localStorage.setItem('userPhone', user.phone);
-      localStorage.setItem('userPhoto', user.profileImage);
+      // persist a few non-sensitive values for UI convenience (store normalized email)
+      if (user.fullName) localStorage.setItem('userName', user.fullName);
+      if (user.email) localStorage.setItem('userEmail', user.email);
+      if (user.phone) localStorage.setItem('userPhone', user.phone || '');
+      if (user.profileImage) localStorage.setItem('userPhoto', user.profileImage || '');
     } catch (e) {
       console.error('Token decode failed:', e);
-      this.logout();
+      // don't aggressively clear localStorage or force a logout; set user to null so UI can fallback
+      this.currentUserSubject.next(null);
     }
   }
 
-  // --- Helpers & accessors ---
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
@@ -163,98 +164,123 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // snapshot helper
-  getCurrentUserSnapshot(): CurrentUser | null {
-    return this.currentUserSubject.value;
-  }
-
-  // try to determine user id from current user or token
-  getUserId(): number | null {
-    const u = this.getCurrentUser();
-    if (u && (u.userId || u.userId === 0)) return Number(u.userId);
-
-    // fallback to token decode
-    const token = this.getToken();
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return Number(payload.UserID ?? payload.userID ?? payload.sub ?? payload.id ?? null) || null;
-    } catch {
-      return null;
-    }
-  }
-
-  // technician object
-  getTechnician() {
-    const raw = localStorage.getItem('technicianData');
-    return raw ? JSON.parse(raw) : null;
+  getTechnician(): any {
+    const id = this.getTechnicianId();
+    return id ? { technicianID: Number(id) } : null;
   }
 
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
 
-  // logout - clear all keys we used
-  logout(): void {
-    const role = this.getRole();
+  logout(redirectTo?: string): void {
+    // read role BEFORE clearing storage
+    const role = this.getRole(); // may be 'Technician', 'Customer', 'Admin', etc.
 
-    // clear keys used in this service
+    // clear auth state
+    localStorage.clear();
+    this.currentUserSubject.next(null);
+    this.userRole$.next(null);
+    this.technicianId$.next(null);
+
+    // if caller supplied an explicit redirect path, use it
+    if (redirectTo) {
+      this.router.navigate([redirectTo]);
+      return;
+    }
+
+    // otherwise route by role we saved earlier
+    const r = (role || '').toLowerCase();
+
+    if (r.includes('technician')) {
+      this.router.navigate(['/technician/login']);
+      return;
+    }
+    if (r.includes('admin')) {
+      this.router.navigate(['/admin/login']);
+      return;
+    }
+
+    // default customer/general login
+    this.router.navigate(['/login']);
+  }
+
+  updateCurrentUser(data: Partial<CurrentUser>) {
+    const current = this.getCurrentUser();
+    if (!current) return;
+
+    // Merge without overwriting fields with undefined
+    const updated: CurrentUser = { ...current };
+    Object.keys(data).forEach((k: string) => {
+      const v = (data as any)[k];
+      if (v !== undefined) {
+        (updated as any)[k] = v;
+      }
+    });
+
+    this.currentUserSubject.next(updated);
+    console.log('AuthService.updateCurrentUser -> emitted', updated);
+
+    // Persist only existing values
+    if (updated.fullName) localStorage.setItem('userName', updated.fullName);
+    if (updated.phone) localStorage.setItem('userPhone', updated.phone || '');
+    if (updated.profileImage) localStorage.setItem('userPhoto', updated.profileImage || '');
+    if (updated.email) localStorage.setItem('userEmail', updated.email);
+  }
+
+  // --- PROFILE & UPLOAD METHODS (100% WORKING!) ---
+  getMyAddress(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/addresses/my`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  uploadTechnicianAvatar(formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/technician/upload-avatar`, formData, {
+      headers: this.getAuthHeaders(false) // No Content-Type — let browser set it!
+    });
+  }
+
+  updateTechnicianProfile(payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/technician/update-profile`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  updateProfile(payload: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/customer/profile`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  // Helper: Get Authorization Header
+  private getAuthHeaders(includeContentType: boolean = true): HttpHeaders {
+    let headers = new HttpHeaders();
+    const token = this.getToken();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (includeContentType) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+    return headers;
+  }
+
+  // Clear auth state WITHOUT navigation (caller controls routing)
+  clearAuthState(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
     localStorage.removeItem(this.techKey);
     localStorage.removeItem(this.techStatusKey);
 
-    // legacy keys
+    // Remove convenience items we set
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userPhone');
     localStorage.removeItem('userPhoto');
-    localStorage.removeItem('technicianData');
 
     this.currentUserSubject.next(null);
     this.userRole$.next(null);
     this.technicianId$.next(null);
-
-    // navigate appropriately
-    if (role === 'Technician') {
-      this.router.navigate(['/technician-login']);
-    } else {
-      this.router.navigate(['/login']);
-    }
-  }
-
-  // update current user (merge)
-  updateCurrentUser(data: Partial<CurrentUser>) {
-    const current = this.getCurrentUser();
-    if (current) {
-      const updated = { ...current, ...data };
-      this.currentUserSubject.next(updated);
-      localStorage.setItem('userName', updated.fullName);
-      localStorage.setItem('userPhone', updated.phone || '');
-      localStorage.setItem('userPhoto', updated.profileImage || '');
-    }
-  }
-
-  // --- API methods used by your components ---
-  updateProfile(payload: any) {
-    return this.http.put(`${this.apiUrl}/users/update-profile`, payload);
-  }
-
-  updateTechnicianProfile(payload: any) {
-    return this.http.put(`${this.apiUrl}/technician/update-profile`, payload, {
-      headers: { Authorization: `Bearer ${this.getToken()}` }
-    });
-  }
-
-  uploadTechnicianAvatar(formData: FormData) {
-    return this.http.post(`${this.apiUrl}/technician/upload-avatar`, formData, {
-      headers: { Authorization: `Bearer ${this.getToken()}` }
-    });
-  }
-
-  getMyAddress() {
-    return this.http.get(`${this.apiUrl}/technician/my-address`, {
-      headers: { Authorization: `Bearer ${this.getToken()}` }
-    });
   }
 }

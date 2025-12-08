@@ -1,26 +1,35 @@
 // src/app/technician/dashboard.component.ts
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
 import { TechnicianService } from '../shared/services/technician.service';
 import { AuthService } from '../shared/services/auth.service';
-import { RouterLink } from '@angular/router';
+
 import { TechnicianVerifyDocComponent } from "./verify/technician-verify-doc.component";
 import { ContactAboutComponent } from './contact-about/contact-about.component';
 import { ProfileComponent } from './profile/profile.component';
 import { WalletComponent } from './wallet/wallet.component';
 import { JobsComponent } from './jobs/jobs.component';
 
-
 @Component({
   selector: 'app-technician-dashboard',
   standalone: true,
-  imports: [CommonModule, TechnicianVerifyDocComponent,ContactAboutComponent,ProfileComponent,WalletComponent,JobsComponent], // <-- fixes *ngIf / *ngFor warnings
+  imports: [
+    CommonModule,
+    TechnicianVerifyDocComponent,
+    ContactAboutComponent,
+    ProfileComponent,
+    WalletComponent,
+    JobsComponent
+  ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class TechnicianDashboardComponent implements OnInit {
-  profileName = 'John Doe';
+export class TechnicianDashboardComponent implements OnInit, OnDestroy {
+  profileName = 'Technician';
   profileImage = '/assets/avatar.png';
 
   stats: any = {};
@@ -39,40 +48,46 @@ export class TechnicianDashboardComponent implements OnInit {
   showWalletModal = false;
   showJobsModal = false;
 
+  private destroy$ = new Subject<void>();
 
-  constructor(private techService: TechnicianService, private auth: AuthService) {}
+  constructor(
+    public techService: TechnicianService,
+    public auth: AuthService
+  ) {}
 
-//   ngOnInit(): void {
-//     // get verification status from AuthService (if you store it there)
-//     // fallback to 'Verified' for demo
-//     try {
-//       // If your AuthService exposes a method, use it. Otherwise default.
-//       // this.verificationStatus = this.auth.getTechnicianVerificationStatus();
-//       this.verificationStatus = 'Verified';
-//     } catch {
-//       this.verificationStatus = 'Verified';
-//     }
+  ngOnInit() {
+    // Subscribe to currentUser$ to update name/image reactively
+    this.auth.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        if (user) {
+          this.profileName = user.fullName || 'Technician';
 
-//     this.setupMockData();
-//     // optionally call API:
-//     // this.loadJobs();
+          // If backend returns the same filename each time, append a cache-busting query param
+          // so that the browser requests the updated image after profile update.
+          const raw = user.profileImage || '/assets/avatar.png';
+          // only append timestamp for non-empty non-default URLs
+          if (raw && !raw.includes('/assets/avatar.png')) {
+            this.profileImage = `${raw}?t=${Date.now()}`;
+          } else {
+            this.profileImage = raw;
+          }
+        } else {
+          // fallback
+          this.profileName = 'Technician';
+          this.profileImage = '/assets/avatar.png';
+        }
+      });
 
-// // 01.12.2025
-//     this.loadTechnicianDetails();
-//     this.loadDashboardData();
-//   }
+    // initial loads
+    this.loadTechnicianDetails();
+    this.loadDashboardData();
+  }
 
-ngOnInit() {
-  this.auth.currentUser$.subscribe(user => {
-    if (user) {
-      this.profileName = user.fullName;
-      this.profileImage = user.profileImage || '/assets/avatar.png';
-    }
-  });
-
-  this.loadTechnicianDetails();
-  this.loadDashboardData();
-}
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   private setupMockData(): void {
     this.stats = {
@@ -95,7 +110,6 @@ ngOnInit() {
     this.weekly = { total: 1150, change: 12, bars: [10, 40, 60, 30, 90, 70, 100] };
   }
 
-  // if you want to load real data from API:
   loadJobs(): void {
     this.loading = true;
     this.techService.getAssignedJobs().subscribe({
@@ -120,7 +134,6 @@ ngOnInit() {
       return;
     }
 
-    // If using API:
     if (this.techService && typeof this.techService.acceptJob === 'function') {
       this.techService.acceptJob(bookingId).subscribe({
         next: () => this.loadJobs(),
@@ -129,13 +142,11 @@ ngOnInit() {
       return;
     }
 
-    // fallback UI-only behaviour
     this.newJobs = this.newJobs.filter(j => j.bookingID !== bookingId);
     alert('Accepted job ' + bookingId);
   }
 
   decline(bookingId: number): void {
-    // call API if available; otherwise just remove locally
     this.newJobs = this.newJobs.filter(j => j.bookingID !== bookingId);
   }
 
@@ -151,7 +162,6 @@ ngOnInit() {
       });
       return;
     }
-    // fallback: update local mock
     if (this.currentJob && this.currentJob.bookingID === bookingId) {
       this.currentJob.status = status;
     }
@@ -162,92 +172,98 @@ ngOnInit() {
     const value = el ? el.value : '';
     if (value) this.updateStatus(bookingId, value);
   }
-  // 05.12.2025
-  loadTechnicianDetails() {
-  const user = this.auth.getCurrentUser();
-  const tech = this.auth.getTechnician();
 
-  if (user) {
-    this.profileName = user.fullName;
-    this.profileImage = user.profileImage || "/assets/avatar.png";
+  loadTechnicianDetails() {
+    const user = this.auth.getCurrentUser();
+    const tech = this.auth.getTechnician();
+
+    if (user) {
+      this.profileName = user.fullName;
+      this.profileImage = user.profileImage || '/assets/avatar.png';
+    }
+
+    this.verificationStatus = localStorage.getItem("technicianVerificationStatus") || "Pending";
   }
 
-  this.verificationStatus =
-    localStorage.getItem("technicianVerificationStatus") || "Pending";
+  uploadDocument(event: any) {
+    this.selectedDocument = event.target.files[0] ?? null;
+  }
+
+  submitDocument() {
+    if (!this.selectedDocument) {
+      alert('Please select a document first.');
+      return;
+    }
+
+    const form = new FormData();
+    form.append('file', this.selectedDocument);
+    const tech = this.auth.getTechnician();
+    if (tech && tech.technicianID) {
+      form.append('technicianId', String(tech.technicianID));
+    }
+
+    this.techService.uploadDocument(form).subscribe({
+      next: () => {
+        this.documentUploaded = true;
+        alert("Document uploaded. Waiting for admin approval.");
+      },
+      error: () => alert("Failed to upload document.")
+    });
+  }
+
+  loadDashboardData() {
+    this.techService.getDashboard().subscribe({
+      next: (data: any) => {
+        // defensively assign only if present
+        this.stats = data?.stats ?? this.stats;
+        this.newJobs = data?.jobs ?? this.newJobs;
+        this.currentJob = data?.currentJob ?? this.currentJob;
+        this.weekly = data?.weekly ?? this.weekly;
+      },
+      error: () => this.error = 'Failed to load dashboard data'
+    });
+  }
+
+  // verify modal controls
+  showVerifyModal = false;
+
+  openVerifyModal() {
+    this.showVerifyModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeVerifyModal() {
+    this.showVerifyModal = false;
+    document.body.style.overflow = '';
+  }
+
+  openContactModal() {
+    this.showContactModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeContactModal() {
+    this.showContactModal = false;
+    document.body.style.overflow = '';
+  }
+
+  openProfileModal() {
+    this.showProfileModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeProfileModal() {
+    this.showProfileModal = false;
+    document.body.style.overflow = '';
+  }
+
+  openWalletModal() { this.showWalletModal = true; document.body.style.overflow='hidden'; }
+  closeWalletModal() { this.showWalletModal = false; document.body.style.overflow=''; }
+
+  openJobsModal() { this.showJobsModal = true; document.body.style.overflow = 'hidden'; }
+  closeJobsModal() { this.showJobsModal = false; document.body.style.overflow = ''; }
+
+  logout() {
+    this.auth.logout();
+  }
 }
-
-uploadDocument(event: any) {
-  this.selectedDocument = event.target.files[0] ?? null;
-}
-
-submitDocument() {
-  const form = new FormData();
-  form.append('file', this.selectedDocument!);
-  form.append('technicianId', this.auth.getTechnician().technicianID);
-
-  this.techService.uploadDocument(form).subscribe({
-    next: () => {
-      this.documentUploaded = true;
-      alert("Document uploaded. Waiting for admin approval.");
-    },
-    error: () => alert("Failed to upload document.")
-  });
-}
-loadDashboardData() {
-  this.techService.getDashboard().subscribe({
-    next: (data: any) => {
-      this.stats = data.stats;
-      this.newJobs = data.jobs;
-      this.currentJob = data.currentJob;
-      this.weekly = data.weekly;
-    },
-    error: () => this.error = 'Failed to load dashboard data'
-  });
-}
-showVerifyModal = false;
-
-openVerifyModal() {
-  this.showVerifyModal = true;
-  // disable background scroll
-  document.body.style.overflow = 'hidden';
-}
-
-closeVerifyModal() {
-  this.showVerifyModal = false;
-  // restore background scroll
-  document.body.style.overflow = '';
-}
-
-openContactModal() {
-  this.showContactModal = true;
-  document.body.style.overflow = 'hidden';
-}
-
-closeContactModal() {
-  this.showContactModal = false;
-  document.body.style.overflow = '';
-}
-
-openProfileModal() {
-  this.showProfileModal = true;
-  document.body.style.overflow = 'hidden';
-}
-
-closeProfileModal() {
-  this.showProfileModal = false;
-  document.body.style.overflow = '';
-}
-
-openWalletModal() { this.showWalletModal = true; document.body.style.overflow='hidden'; }
-closeWalletModal() { this.showWalletModal = false; document.body.style.overflow=''; }
-
-
-openJobsModal() { this.showJobsModal = true; document.body.style.overflow = 'hidden'; }
-closeJobsModal() { this.showJobsModal = false; document.body.style.overflow = ''; }
-logout() {
-  this.auth.logout();
-}
-
-}
-
-

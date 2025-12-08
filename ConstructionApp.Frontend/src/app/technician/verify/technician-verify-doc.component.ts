@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
-import { firstValueFrom } from 'rxjs';
 
 import { TechnicianService } from '../../shared/services/technician.service';
 import { AuthService } from '../../shared/services/auth.service';
@@ -43,7 +42,6 @@ export class TechnicianVerifyDocComponent implements OnInit {
     this.loadVerifyData();
 
     // Also try to auto-fill address from AuthService/getMyAddress if available
-    // Some backends provide a dedicated endpoint
     this.tryLoadAddressFromAuth();
   }
 
@@ -105,7 +103,10 @@ export class TechnicianVerifyDocComponent implements OnInit {
       return;
     }
 
+    // set control and mark dirty
     this.verifyForm.patchValue({ [field]: file });
+    this.verifyForm.get(field)?.markAsDirty();
+
     if (field === 'nic') this.nicFileName = file.name;
     if (field === 'certificate') this.certFileName = file.name;
     this.statusMsg = '';
@@ -120,10 +121,23 @@ export class TechnicianVerifyDocComponent implements OnInit {
       return;
     }
 
-    // 2) Try dedicated API endpoint if available
+    // 2) Try dedicated API endpoint if available — be defensive about response shape
     this.auth.getMyAddress().pipe(finalize(() => {})).subscribe({
       next: (res: any) => {
-        const addr = res?.data ?? res;
+        // normalize
+        let addr: any = null;
+        if (!res) {
+          addr = null;
+        } else if (res.data && Array.isArray(res.data)) {
+          addr = res.data.length ? res.data[0] : null;
+        } else if (Array.isArray(res)) {
+          addr = res.length ? res[0] : null;
+        } else if (res.addressID || res.street || res.city) {
+          addr = res;
+        } else if (res.data && typeof res.data === 'object') {
+          addr = res.data;
+        }
+
         if (addr) {
           this.verifyForm.patchValue({
             address: {
@@ -144,45 +158,94 @@ export class TechnicianVerifyDocComponent implements OnInit {
 
   // Submit documents to backend
   submit(): void {
-  // basic validation
-  if (this.verifyForm.invalid) {
-    this.statusMsg = 'Please fill required fields.';
-    return;
-  }
-
-  const addr = this.verifyForm.get('address')?.value;
-  const nicFile: File | null = this.verifyForm.get('nic')?.value ?? null;
-  const certFile: File | null = this.verifyForm.get('certificate')?.value ?? null;
-
-  const payload = {
-    nicFile,
-    certificateFile: certFile,
-    street: addr.street,
-    city: addr.city,
-    state: addr.state,
-    postalCode: addr.postalCode,
-    country: addr.country,
-    experienceYears: Number(this.verifyForm.get('experienceYears')?.value) || null,
-    categories: this.categoriesSelected
-  };
-
-  this.submitting = true;
-  this.techService.uploadVerification(payload).subscribe({
-    next: (res: any) => {
-      this.submitting = false;
-      this.statusMsg = 'Documents submitted — waiting admin verification.';
-      // optionally refresh data
-      this.loadVerifyData();
-    },
-    error: (err: any) => {
-      this.submitting = false;
-      console.error('Upload error', err);
-      this.statusMsg = err?.error?.message ?? 'Failed to upload documents.';
+    // basic validation
+    if (this.verifyForm.invalid) {
+      this.statusMsg = 'Please fill required fields.';
+      this.verifyForm.markAllAsTouched();
+      return;
     }
-  });
-}
 
+    const addr = this.verifyForm.get('address')?.value;
+    const nicFile: File | null = this.verifyForm.get('nic')?.value ?? null;
+    const certFile: File | null = this.verifyForm.get('certificate')?.value ?? null;
 
+    // Build FormData because files must be uploaded as multipart/form-data
+    const form = new FormData();
+
+    if (nicFile instanceof File) form.append('nic', nicFile, nicFile.name);
+    if (certFile instanceof File) form.append('certificate', certFile, certFile.name);
+
+    form.append('street', addr.street ?? '');
+    form.append('city', addr.city ?? '');
+    form.append('state', addr.state ?? '');
+    form.append('postalCode', addr.postalCode ?? '');
+    form.append('country', addr.country ?? 'Sri Lanka');
+
+    const years = Number(this.verifyForm.get('experienceYears')?.value);
+    if (!isNaN(years)) form.append('experienceYears', String(years));
+
+    // categories: append both array style & JSON — backend can pick either
+    if (this.categoriesSelected && this.categoriesSelected.length) {
+      this.categoriesSelected.forEach(c => form.append('categories[]', c));
+      form.append('categories', JSON.stringify(this.categoriesSelected));
+    }
+
+    this.submitting = true;
+    this.statusMsg = '';
+
+    // inside submit() — replace next handler
+this.techService.uploadVerification(form).pipe(
+  finalize(() => (this.submitting = false))
+).subscribe({
+  next: (res: any) => {
+    console.log('uploadVerification response:', res);
+    this.statusMsg = 'Documents submitted — waiting admin verification.';
+
+    // Try to read returned verification data from response (API returns { success:true, message, data: { idProof, cert, experienceYears } })
+    const returned = res?.data ?? res ?? null;
+
+    // update filenames if returned paths exist
+    const nicPath = returned?.idProof ?? returned?.IDProof ?? returned?.idproof ?? null;
+    const certPath = returned?.cert ?? returned?.certificate ?? returned?.certificatePath ?? null;
+    if (nicPath) this.nicFileName = (typeof nicPath === 'string' ? (nicPath.split('/').pop() ?? nicPath) : String(nicPath));
+    if (certPath) this.certFileName = (typeof certPath === 'string' ? (certPath.split('/').pop() ?? certPath) : String(certPath));
+
+    // experience years
+    if (returned?.experienceYears !== undefined && returned?.experienceYears !== null) {
+      this.verifyForm.patchValue({ experienceYears: returned.experienceYears });
+    }
+
+    // If backend echoed categories or address, apply them too
+    if (returned?.categories) {
+      try {
+        this.categoriesSelected = Array.isArray(returned.categories) ? returned.categories : JSON.parse(returned.categories);
+      } catch {
+        this.categoriesSelected = (typeof returned.categories === 'string' && returned.categories) ? returned.categories.split(',').map((s: string)=> s.trim()) : [];
+      }
+    }
+
+    if (returned?.street || returned?.city || returned?.state || returned?.postalCode) {
+      this.verifyForm.patchValue({
+        address: {
+          street: returned.street ?? '',
+          city: returned.city ?? '',
+          state: returned.state ?? '',
+          postalCode: returned.postalCode ?? '',
+          country: returned.country ?? 'Sri Lanka'
+        }
+      });
+    }
+
+    // Optionally refresh by calling loadVerifyData() if server later provides GET
+    // this.loadVerifyData();
+  },
+  error: (err: any) => {
+    console.error('Upload error', err);
+    this.statusMsg = err?.error?.message ?? 'Failed to upload documents.';
+  }
+});
+
+  }
 
   loadVerifyData(): void {
     this.isLoading = true;
@@ -191,35 +254,74 @@ export class TechnicianVerifyDocComponent implements OnInit {
       finalize(() => this.isLoading = false)
     ).subscribe({
       next: (res: any) => {
-        const data = res?.data ?? res;
+        console.log('VERIFY DETAILS RAW RESPONSE:', res);
+        const data = res?.data ?? res ?? null;
         if (!data) return;
 
-        if (data.address) {
+        // ------------ ADDRESS ------------
+        const addr =
+          data.address ??
+          data.data?.address ??
+          (data.street || data.city || data.postalCode ? {
+            street: data.street,
+            city: data.city,
+            state: data.state,
+            postalCode: data.postalCode,
+            country: data.country
+          } : null);
+
+        if (addr) {
           this.verifyForm.patchValue({
             address: {
-              street: data.address.street ?? '',
-              city: data.address.city ?? '',
-              state: data.address.state ?? '',
-              postalCode: data.address.postalCode ?? '',
-              country: data.address.country ?? 'Sri Lanka'
+              street: addr.street ?? '',
+              city: addr.city ?? '',
+              state: addr.state ?? '',
+              postalCode: addr.postalCode ?? '',
+              country: addr.country ?? 'Sri Lanka'
             }
           });
         }
 
+        // ------------ EXPERIENCE YEARS ------------
         if (data.experienceYears !== undefined && data.experienceYears !== null) {
           this.verifyForm.patchValue({ experienceYears: data.experienceYears });
+        } else if (data.experience_years !== undefined) {
+          this.verifyForm.patchValue({ experienceYears: data.experience_years });
         }
 
-        if (Array.isArray(data.categories)) {
-          this.categoriesSelected = [...data.categories];
+        // ------------ CATEGORIES ------------
+        const cats =
+          data.categories ??
+          data.category ??
+          data.categoryNames ??
+          data.data?.categories ??
+          [];
+
+        if (Array.isArray(cats) && cats.length) {
+          this.categoriesSelected = [...cats];
         }
 
-        if (data.idProof) {
-          this.nicFileName = data.idProof.split('/').pop();
-        }
-        if (data.certificate) {
-          this.certFileName = data.certificate.split('/').pop();
-        }
+        // ------------ DOCUMENT NAMES ------------
+        const nic = data.idProof ?? data.nic ?? data.nicFile ?? data.data?.idProof ?? null;
+        const cert = data.certificate ?? data.cert ?? data.certificateFile ?? data.data?.certificate ?? null;
+
+        if (nic) {
+  const nicName = (typeof nic === 'string') ? (nic.split('/').pop() ?? null) : (nic ? String(nic) : null);
+  this.nicFileName = nicName;
+} else {
+  this.nicFileName = null;
+}
+
+if (cert) {
+  const certName = (typeof cert === 'string') ? (cert.split('/').pop() ?? null) : (cert ? String(cert) : null);
+  this.certFileName = certName;
+} else {
+  this.certFileName = null;
+}
+
+
+        // final debug object
+        console.log('NORMALIZED VERIFY DATA:', { addr, experience: data.experienceYears, cats, nic, cert });
       },
       error: (err) => {
         console.error('Failed to load verification details', err);

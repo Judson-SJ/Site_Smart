@@ -15,10 +15,8 @@ import { NgIcon } from "@ng-icons/core";
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  // FIX 1: Initialize fb first
   private fb = new FormBuilder();
 
-  // FIX 2: Now form can be initialized safely
   form = this.fb.group({
     email: [' ', [Validators.required, Validators.email]],
     password: [' ', [
@@ -33,7 +31,6 @@ export class LoginComponent {
   showPassword = false;
 
   constructor(
-
     private auth: AuthService,
     private router: Router
   ) {}
@@ -63,26 +60,72 @@ export class LoginComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    // FIX 3: Safe way to pass form value
     const loginData = {
-      email: this.form.get('email')?.value || '',
+      email: this.form.get('email')?.value?.trim() || '',
       password: this.form.get('password')?.value || ''
     };
 
     this.auth.login(loginData).subscribe({
       next: (res: any) => {
         this.loading = false;
-        if (res.success) {
-          localStorage.setItem('userName', res.user?.name || 'User');
-          localStorage.setItem('role', res.user?.role || 'Customer');
 
-          const route = res.user?.role === 'Technician'
-            ? '/technician/dashboard'
-            : '/customer/dashboard';
-          this.router.navigate([route]);
-        } else {
-          this.errorMessage = res.message || 'Login failed';
+        if (!res || !res.success) {
+          this.errorMessage = res?.message || 'Login failed';
+          setTimeout(() => this.errorMessage = '', 5000);
+          return;
         }
+
+        // determine role from response or token
+        const possibleRole =
+          (res.role as string) ||
+          (res.data && res.data.role) ||
+          (res.user && res.user.role) ||
+          '';
+
+        let normalizedRole = (possibleRole || '').toString().trim();
+        if (!normalizedRole) {
+          const token = this.auth.getToken();
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              normalizedRole =
+                (payload?.role || payload?.Role || payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'] || '')
+                  .toString()
+                  .trim();
+            } catch (e) {
+              normalizedRole = '';
+            }
+          }
+        }
+
+        normalizedRole = normalizedRole.toLowerCase();
+
+        // IMPORTANT: Customer login page -> ONLY allow customers here.
+        // If role is technician OR admin OR unknown, clear auth state and show friendly message.
+        if (!normalizedRole || normalizedRole === '' || normalizedRole.includes('technician') || normalizedRole.includes('admin') || !normalizedRole.includes('customer')) {
+          try {
+            if (typeof this.auth.clearAuthState === 'function') {
+              this.auth.clearAuthState();
+            } else {
+              // last-resort: remove token and role manually without navigation
+              try {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+              } catch (_) {}
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          this.errorMessage = 'This login page is for customers only. Please use the appropriate login page.';
+          // keep the user on the same page; do NOT navigate anywhere.
+          setTimeout(() => this.errorMessage = '', 6000);
+          return;
+        }
+
+        // If we reached here, normalizedRole indicates 'customer' -> proceed normally.
+        if (res.user?.name) localStorage.setItem('userName', res.user.name);
+        this.router.navigate(['/customer/dashboard']);
       },
       error: (err: any) => {
         this.loading = false;
@@ -90,7 +133,6 @@ export class LoginComponent {
           || err.error?.error
           || err.message
           || 'Invalid email or password. Please try again.';
-
         setTimeout(() => this.errorMessage = '', 5000);
       }
     });

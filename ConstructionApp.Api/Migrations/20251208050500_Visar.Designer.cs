@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConstructionApp.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251205112505_NewUpdate")]
-    partial class NewUpdate
+    [Migration("20251208050500_Visar")]
+    partial class Visar
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
