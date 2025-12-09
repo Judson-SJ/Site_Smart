@@ -54,14 +54,15 @@ export class CustomerDashboardComponent implements OnInit, OnDestroy {
       this.loadBookings();
     });
   }
-  // இதை component class-க்குள்ள add பண்ணு (மேலேயே இருக்கணும்!)
-getProgressStep(status: string): number {
-  const s = status.toLowerCase();
-  if (s.includes('request')) return 1;
-  if (s.includes('accept')) return 2;
-  if (s.includes('progress') || s.includes('ongoing')) return 3;
-  return 4;
-}
+
+  // small helper to compute progress step (used in template)
+  getProgressStep(status: string): number {
+    const s = status.toLowerCase();
+    if (s.includes('request')) return 1;
+    if (s.includes('accept')) return 2;
+    if (s.includes('progress') || s.includes('ongoing')) return 3;
+    return 4;
+  }
 
   ngOnDestroy(): void {
     this.pollSubscription?.unsubscribe();
@@ -111,7 +112,7 @@ getProgressStep(status: string): number {
           }
 
           // Sort by date (latest first)
-          this.allBookings = bookings.sort((a, b) => 
+          this.allBookings = bookings.sort((a, b) =>
             new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime()
           );
 
@@ -130,17 +131,49 @@ getProgressStep(status: string): number {
       });
   }
 
+  // Build a usable image URL or fallback to ui-avatars
+  private buildImageUrl(pathOrName?: string | null, fallbackName?: string): string {
+    if (!pathOrName) {
+      const name = encodeURIComponent(fallbackName || this.userName || 'User');
+      return `https://ui-avatars.com/api/?name=${name}&background=8b5cf6&color=fff&bold=true&size=256`;
+    }
+
+    // already absolute
+    if (pathOrName.startsWith('http://') || pathOrName.startsWith('https://')) {
+      return pathOrName;
+    }
+
+    // treat as relative path on the API server
+    const base = this.apiUrl.replace(/\/$/, '');
+    return `${base}/${pathOrName.replace(/^\/+/, '')}`;
+  }
+
+  // mapBooking chooses which avatar to show depending on status
   private mapBooking(b: any): Booking {
     const dateStr = b.PreferredStartDateTime || b.preferredStartDateTime || b.Date || b.date || new Date().toISOString();
     const status = this.normalizeStatus(b.Status || b.status || 'Requested');
+
+    const techName = b.TechnicianName || b.technicianName || 'Technician';
+    const rawTechPhoto = b.TechnicianPhoto || b.technicianPhoto || null;
+
+    const rawCustomerPhoto = b.CustomerPhoto || b.customerPhoto || null;
+    const customerName = b.CustomerName || b.customerName || this.userName || 'User';
+
+    // Pick avatar: technician for accepted/in-progress/completed; else show customer (or dashboard user)
+    let avatarUrl: string;
+    if (status === 'Accepted' || status === 'In-Progress' || status === 'Completed') {
+      avatarUrl = this.buildImageUrl(rawTechPhoto, techName);
+    } else {
+      avatarUrl = rawCustomerPhoto ? this.buildImageUrl(rawCustomerPhoto, customerName) : this.userAvatar;
+    }
 
     return {
       bookingID: b.BookingID || b.bookingID || 0,
       serviceName: b.ServiceName || b.serviceName || 'Unknown Service',
       scheduledDate: this.formatDate(dateStr),
       rawDate: dateStr,
-      technicianName: b.TechnicianName || b.technicianName || 'Technician',
-      technicianPhoto: b.TechnicianPhoto || null,
+      technicianName: techName,
+      technicianPhoto: avatarUrl,
       price: Number(b.TotalAmount || b.totalAmount || 0),
       status,
       progress: this.getProgressFromStatus(status)
@@ -202,6 +235,13 @@ getProgressStep(status: string): number {
   }
 
   logout() {
-    this.router.navigate(['home']);      // ✅ Now works
+    this.router.navigate(['home']);
+  }
+
+  // Template image error fallback (sets ui-avatars)
+  onAvatarError(event: Event, fallbackName?: string) {
+    const img = event.target as HTMLImageElement;
+    const name = encodeURIComponent(fallbackName || this.userName || 'User');
+    img.src = `https://ui-avatars.com/api/?name=${name}&background=8b5cf6&color=fff&bold=true&size=256`;
   }
 }

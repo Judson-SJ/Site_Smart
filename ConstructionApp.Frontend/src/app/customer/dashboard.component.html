@@ -36,7 +36,7 @@
     <!-- User Info in Sidebar -->
     <div class="user-info">
       <img
-        [src]="userAvatar || 'https://ui-avatars.com/api/?name=' + userName + '&background=8b5cf6&color=fff&bold=true&size=128'"
+        [src]="userAvatar || ('https://ui-avatars.com/api/?name=' + userName + '&background=8b5cf6&color=fff&bold=true&size=128')"
         alt="User Avatar"
         class="user-avatar rounded-full object-cover">
       <div class="user-details">
@@ -83,30 +83,31 @@
         </div>
 
         <!-- Progress Bar -->
-      <div class="px-8 py-8">
-        <div class="flex justify-between items-center mb-4 text-sm">
-          <span class="text-gray-400">Step {{ getProgressStep(currentBooking.status) }} of 4. Your project is currently underway</span>
-          <span class="text-purple-400 font-bold text-xl">{{ currentBooking.progress }}%</span>
-        </div>
-        
-        <div class="w-full bg-gray-800 rounded-full h-5 overflow-hidden shadow-inner">
-          <div class="h-full bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 rounded-full transition-all duration-1000 ease-out"
-               [style.width.%]="currentBooking.progress">
+        <div class="px-8 py-8">
+          <div class="flex justify-between items-center mb-4 text-sm">
+            <span class="text-gray-400">Step {{ getProgressStep(currentBooking.status) }} of 4. Your project is currently underway</span>
+            <span class="text-purple-400 font-bold text-xl">{{ currentBooking.progress }}%</span>
+          </div>
+
+          <div class="w-full bg-gray-800 rounded-full h-5 overflow-hidden shadow-inner">
+            <div class="h-full bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 rounded-full transition-all duration-1000 ease-out"
+                 [style.width.%]="currentBooking.progress">
+            </div>
+          </div>
+
+          <div class="flex justify-between mt-4 text-sm text-gray-500">
+            <span>Requested</span>
+            <span>Accepted</span>
+            <span>In-Progress</span>
+            <span class="text-purple-400 font-bold">Completed</span>
           </div>
         </div>
-
-        <div class="flex justify-between mt-4 text-sm text-gray-500">
-          <span>Requested</span>
-          <span>Accepted</span>
-          <span>In-Progress</span>
-          <span class="text-purple-400 font-bold">Completed</span>
-        </div>
-      </div>
 
         <!-- Technician Info -->
         <div class="technician-info flex items-center gap-6 mb-8 p-6 bg-white/5 rounded-2xl">
           <img
-            [src]="currentBooking.technicianPhoto "
+            [src]="currentBooking.technicianPhoto || userAvatar"
+            (error)="onAvatarError($event, currentBooking?.technicianName)"
             alt="Technician"
             class="w-20 h-20 rounded-full object-cover border-4 border-[#8b5cf6]/50">
           <div>
@@ -166,10 +167,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of bookingHistory" 
+            <tr *ngFor="let b of bookingHistory"
               class="border-t border-gray-800 hover:bg-gray-800/50 transition cursor-pointer"
               (click)="selectAsCurrent(b)">
-  
+
               <!-- Service Name -->
               <td class="px-8 py-6">
                 <div class="flex items-center gap-4">
@@ -196,10 +197,11 @@
               <!-- Technician -->
               <td class="px-8 py-6">
                 <div class="flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
-                    {{ (b.technicianName || 'P').charAt(0) }}
-                  </div>
+                  <img
+                    [src]="b.technicianPhoto || ('https://ui-avatars.com/api/?name=' + (b.technicianName || 'User') + '&background=8b5cf6&color=fff&bold=true&size=128')"
+                    (error)="onAvatarError($event, b.technicianName)"
+                    class="w-10 h-10 rounded-full object-cover border-2 border-transparent"
+                    alt="Technician avatar">
                   <span class="text-white font-medium">
                     {{ b.technicianName || 'Pending Assignment' }}
                   </span>
