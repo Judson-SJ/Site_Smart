@@ -40,4 +40,4 @@ namespace ConstructionApp.Api.Models
         public User User { get; set; } = null!;
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
-}
+}// test update
