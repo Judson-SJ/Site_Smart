@@ -5,6 +5,7 @@ using ConstructionApp.Api.Repositories;
 using ConstructionApp.Api.Repositories.Implementations;
 using ConstructionApp.Api.Repositories.Interfaces;
 using ConstructionApp.Api.Services;
+using ConstructionApp.Api.System;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -70,6 +71,10 @@ builder.Services.AddScoped<JwtTokenHelper>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<AdminDashboardService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<SystemNotifier>();
+
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

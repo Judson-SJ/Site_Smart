@@ -1,11 +1,13 @@
-
-// admin-users.component.ts
+// src/app/admin/users/admin-users.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { formatDate } from '@angular/common';
 import { finalize } from 'rxjs/operators';
-import { AdminUsersService, UserListItem } from '../../shared/services/admin-users.service';
+
+import {  AdminUsersService,UserListItem,UserDetail } from '../../shared/services/admin-users.service';
+import { AdminTechnicianService } from '../../shared/services/admin-technician.service';
+import { environment } from '../../../environments/environment';
+
 
 @Component({
   selector: 'app-admin-users',
@@ -32,11 +34,22 @@ export class AdminUsersComponent implements OnInit {
   error = '';
 
   // details drawer
-  selectedUser: UserListItem | null = null;
+  selectedUser: UserDetail | null = null;
   drawerOpen = false;
   detailLoading = false;
 
-  constructor(private svc: AdminUsersService) {}
+  // technician approve/reject
+  techActionMsg = '';
+  rejectReason = '';
+  techActionLoading = false;
+
+  // 🔗 API base for file links
+ fileBase = environment.fileBaseUrl;
+
+  constructor(
+    private svc: AdminUsersService,
+    private techAdmin: AdminTechnicianService
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -49,17 +62,11 @@ export class AdminUsersComponent implements OnInit {
     this.load();
   }
 
-  /**
-   * Accept both Event and KeyboardEvent to match template bindings.
-   * The template uses (keyup.enter) (KeyboardEvent) and a click (Event).
-   */
   onSearchKey(e?: Event | KeyboardEvent) {
-    // If called from keyboard event, ensure it's Enter (defensive)
     if (e && 'key' in e) {
       const ke = e as KeyboardEvent;
       if (ke.key && ke.key !== 'Enter') return;
     }
-    // perform search
     this.page = 1;
     this.load();
   }
@@ -67,21 +74,22 @@ export class AdminUsersComponent implements OnInit {
   load() {
     this.loading = true;
     this.error = '';
-    this.svc.listUsers({
-      q: this.q || undefined,
-      role: this.activeRole || undefined,
-      page: this.page,
-      pageSize: this.pageSize
-    }).pipe(finalize(() => (this.loading = false)))
+    this.svc
+      .listUsers({
+        q: this.q || undefined,
+        role: this.activeRole || undefined,
+        page: this.page,
+        pageSize: this.pageSize
+      })
+      .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: res => {
+        next: (res) => {
           this.users = res.items || [];
           this.total = res.total || 0;
-          // safety: normalize keys if they differ
           this.page = res.page || this.page;
           this.pageSize = res.pageSize || this.pageSize;
         },
-        error: err => {
+        error: (err) => {
           console.error('listUsers error', err);
           this.error = 'Failed to load users. Check server.';
         }
@@ -92,16 +100,67 @@ export class AdminUsersComponent implements OnInit {
     this.detailLoading = true;
     this.drawerOpen = true;
     this.selectedUser = null;
-    // fetch fresh details
-    this.svc.getUser(u.userId)
+    this.techActionMsg = '';
+    this.rejectReason = '';
+
+    this.svc
+      .getUser(u.userId)
       .pipe(finalize(() => (this.detailLoading = false)))
       .subscribe({
-        next: d => {
+        next: (d) => {
+          // base detail from /admin/users api
           this.selectedUser = d;
+
+          // If this is a technician, also load verification docs
+          if (
+            this.selectedUser.role === 'Technician' &&
+            this.selectedUser.technician?.technicianID != null
+          ) {
+            const techId = this.selectedUser.technician.technicianID;
+
+            this.techAdmin.getTechnician(techId).subscribe({
+              next: (res: any) => {
+                const data = res?.data ?? res;
+
+                // merge docs into technician object
+                (this.selectedUser as any).technician = {
+                  ...this.selectedUser!.technician,
+                  idProof: data.idProof,
+                  certificate: data.certificate
+                };
+
+                // optional: if address empty, build from dto
+                if (
+                  !this.selectedUser!.address &&
+                  (data.street || data.city)
+                ) {
+                  const pieces = [
+                    data.street,
+                    data.city,
+                    data.state,
+                    data.postalCode,
+                    data.country
+                  ].filter(
+                    (x: string | null | undefined) => !!x
+                  );
+                  this.selectedUser!.address = pieces.join(', ');
+                }
+              },
+              error: (err) => {
+                console.error('getTechnician verify details error', err);
+                // ignore – user detail still shows basic info
+              }
+            });
+          }
         },
-        error: err => {
+        error: (err) => {
           console.error('getUser', err);
-          this.selectedUser = u; // fallback to basic row data
+          // fallback to row data shape
+          this.selectedUser = {
+            ...u,
+            technician: u.technician,
+            admin: u.admin
+          } as UserDetail;
         }
       });
   }
@@ -109,24 +168,126 @@ export class AdminUsersComponent implements OnInit {
   closeDrawer() {
     this.drawerOpen = false;
     this.selectedUser = null;
+    this.techActionMsg = '';
+    this.rejectReason = '';
   }
 
-  // paging helpers
   prevPage() {
     if (this.page <= 1) return;
     this.page--;
     this.load();
   }
+
   nextPage() {
     if (this.page * this.pageSize >= this.total) return;
     this.page++;
     this.load();
   }
 
-  // format ISO date to readable
-  fmt(date?: string|null) {
+  fmt(date?: string | null) {
     if (!date) return '-';
-    try { return formatDate(date, 'MMM dd, yyyy', 'en-US'); }
-    catch { return date; }
+    try {
+      return formatDate(date, 'MMM dd, yyyy', 'en-US');
+    } catch {
+      return date;
+    }
+  }
+
+  // ---------- Technician helpers ----------
+
+  get technicianSelected(): boolean {
+    return !!(
+      this.selectedUser &&
+      this.selectedUser.role === 'Technician' &&
+      this.selectedUser.technician
+    );
+  }
+
+  get technicianHasDocs(): boolean {
+    const tech: any = this.selectedUser?.technician;
+    return !!(tech && tech.idProof && tech.certificate);
+  }
+
+  // 🔗 Build full URL for idProof / certificate
+  getDocUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+
+    path = path.replace('/api/','/');
+
+    // already absolute
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    // ensure leading slash
+    if (!path.startsWith('/')) {
+      path = '/' + path;
+    }
+
+    return this.fileBase + path; // e.g. http://localhost:5035/uploads/...
+  }
+
+  approveTechnician() {
+    if (!this.technicianSelected || !this.selectedUser?.technician) return;
+    const tech = this.selectedUser.technician;
+    if (tech.technicianID == null) {
+      this.techActionMsg = 'Invalid technician id.';
+      return;
+    }
+
+    if (!confirm(`Approve technician: ${this.selectedUser.fullName}?`)) return;
+
+    this.techActionLoading = true;
+    this.techActionMsg = '';
+
+    this.techAdmin
+      .updateVerification(tech.technicianID!, { status: 'Approved' })
+      .pipe(finalize(() => (this.techActionLoading = false)))
+      .subscribe({
+        next: () => {
+          this.techActionMsg = 'Technician approved successfully.';
+          this.selectedUser!.technician!.verificationStatus = 'Approved';
+          this.load(); // refresh list
+        },
+        error: (err) => {
+          console.error('approveTechnician error', err);
+          this.techActionMsg = err?.error?.message ?? 'Approve failed.';
+        }
+      });
+  }
+
+  rejectTechnician() {
+    if (!this.technicianSelected || !this.selectedUser?.technician) return;
+    const tech = this.selectedUser.technician;
+    if (tech.technicianID == null) {
+      this.techActionMsg = 'Invalid technician id.';
+      return;
+    }
+
+    const reasonTrim = (this.rejectReason || '').trim();
+    if (!reasonTrim) {
+      if (!confirm('No reason typed. Reject anyway?')) return;
+    }
+
+    this.techActionLoading = true;
+    this.techActionMsg = '';
+
+    this.techAdmin
+      .updateVerification(tech.technicianID!, {
+        status: 'Rejected',
+        reason: reasonTrim || undefined
+      })
+      .pipe(finalize(() => (this.techActionLoading = false)))
+      .subscribe({
+        next: () => {
+          this.techActionMsg = 'Technician rejected.';
+          this.selectedUser!.technician!.verificationStatus = 'Rejected';
+          this.load();
+        },
+        error: (err) => {
+          console.error('rejectTechnician error', err);
+          this.techActionMsg = err?.error?.message ?? 'Reject failed.';
+        }
+      });
   }
 }

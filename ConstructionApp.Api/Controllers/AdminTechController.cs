@@ -1,120 +1,145 @@
-// Controllers/AdminTechController.cs
+using System.Linq;
+using System.Threading.Tasks;
+using System;
+using ConstructionApp.Api.Data;
+using ConstructionApp.Api.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ConstructionApp.Api.Data;
-using System.Threading.Tasks;
-using ConstructionApp.Api.Services;
 
-[ApiController]
-[Route("api/admin/tech-requests")]
-[Authorize(Roles = "Admin")]
-public class AdminTechController : ControllerBase
+namespace ConstructionApp.Api.Controllers
 {
-    private readonly AppDbContext _db;
-    private readonly EmailService _email; // use your email type
-
-    public AdminTechController(AppDbContext db, EmailService email)
+    [ApiController]
+    [Authorize(Roles = "Admin")]
+    [Route("api/admin/technicians")]
+    public class AdminTechnicianController : ControllerBase
     {
-        _db = db;
-        _email = email;
+        private readonly AppDbContext _context;
+
+        public AdminTechnicianController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // -------------------------------------------------------------
+        // OPTIONAL: list pending technicians (if you want a separate list)
+        // GET: api/admin/technicians/pending
+        // -------------------------------------------------------------
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetPendingTechnicians()
+        {
+            var list = await _context.Technicians
+                .Include(t => t.User)
+                .Where(t => t.VerificationStatus == "Pending")
+                .Select(t => new TechnicianVerificationDto
+                {
+                    TechnicianID = t.TechnicianID,
+                    UserID = t.UserID,
+                    FullName = t.User.FullName,
+                    Email = t.User.Email,
+                    Phone = t.User.Phone ?? "",
+                    VerificationStatus = t.VerificationStatus,
+                    ExperienceYears = t.ExperienceYears,
+                    IDProof = t.IDProof,
+                    Certificate = t.Certificate,
+                    VerifiedAt = t.VerifiedAt
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, data = list });
+        }
+
+        // -------------------------------------------------------------
+        // DETAIL for one technician
+        // GET: api/admin/technicians/{id}
+        // -------------------------------------------------------------
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetTechnician(int id)
+        {
+            var tech = await _context.Technicians
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.TechnicianID == id);
+
+            if (tech == null)
+                return NotFound(new { success = false, message = "Technician not found" });
+
+            var addr = await _context.Addresses
+                .FirstOrDefaultAsync(a => a.UserID == tech.UserID);
+
+            var dto = new TechnicianVerificationDto
+            {
+                TechnicianID = tech.TechnicianID,
+                UserID = tech.UserID,
+                FullName = tech.User.FullName,
+                Email = tech.User.Email,
+                Phone = tech.User.Phone ?? "",
+                VerificationStatus = tech.VerificationStatus,
+                ExperienceYears = tech.ExperienceYears,
+                IDProof = tech.IDProof,         // 🔥 docs from DB
+                Certificate = tech.Certificate, // 🔥 docs from DB
+                Street = addr?.Street,
+                City = addr?.City,
+                State = addr?.State,
+                PostalCode = addr?.PostalCode,
+                Country = addr?.Country,
+                VerifiedAt = tech.VerifiedAt
+            };
+
+            return Ok(new { success = true, data = dto });
+        }
+
+        // -------------------------------------------------------------
+        // APPROVE / REJECT technician
+        // PUT: api/admin/technicians/{id}/verify
+        // -------------------------------------------------------------
+        [HttpPut("{id:int}/verify")]
+        public async Task<IActionResult> VerifyTechnician(
+            int id,
+            [FromBody] UpdateTechnicianVerificationRequest dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
+                return BadRequest(new { success = false, message = "Status is required" });
+
+            var allowed = new[] { "Approved", "Rejected", "Pending" };
+            if (!allowed.Contains(dto.Status))
+                return BadRequest(new { success = false, message = "Invalid status value" });
+
+            var tech = await _context.Technicians
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.TechnicianID == id);
+
+            if (tech == null)
+                return NotFound(new { success = false, message = "Technician not found" });
+
+            // ✅ NEW: require docs before Approve
+            if (dto.Status == "Approved" &&
+                (string.IsNullOrEmpty(tech.IDProof) || string.IsNullOrEmpty(tech.Certificate)))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Cannot approve: technician has not uploaded both ID proof and certificate."
+                });
+            }
+
+            tech.VerificationStatus = dto.Status;
+            tech.VerifiedAt = dto.Status == "Approved" ? DateTime.UtcNow : null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Technician {dto.Status}",
+                data = new
+                {
+                    tech.TechnicianID,
+                    tech.UserID,
+                    tech.VerificationStatus,
+                    tech.VerifiedAt
+                }
+            });
+        }
+
     }
-
-    // GET /api/admin/tech-requests?page=1&size=20
-    [HttpGet]
-    public async Task<IActionResult> ListPending([FromQuery] int page = 1, [FromQuery] int size = 20)
-    {
-        if (page < 1) page = 1;
-        if (size < 1) size = 20;
-
-        var q = _db.Technicians
-            .AsNoTracking()
-            .Include(t => t.User)
-            .Where(t => t.VerificationStatus == "Pending");
-
-        var total = await q.CountAsync();
-
-        var items = await q
-            .OrderBy(t => t.TechnicianID)
-            .Skip((page - 1) * size)
-            .Take(size)
-            .Select(t => new {
-                technicianId = t.TechnicianID,
-                userId = t.UserID,
-                fullName = t.User.FullName,
-                email = t.User.Email,
-                phone = t.User.Phone,
-                submittedAt = t.User.CreatedAt,
-                verificationStatus = t.VerificationStatus
-            }).ToListAsync();
-
-        return Ok(new { success = true, total, page, size, items });
-    }
-
-    // GET /api/admin/tech-requests/{id}
-    [HttpGet("{technicianId:int}")]
-    public async Task<IActionResult> GetRequest(int technicianId)
-    {
-        var t = await _db.Technicians
-            .AsNoTracking()
-            .Include(x => x.User)
-            .Where(x => x.TechnicianID == technicianId)
-            .Select(x => new {
-                technicianId = x.TechnicianID,
-                userId = x.UserID,
-                fullName = x.User.FullName,
-                email = x.User.Email,
-                phone = x.User.Phone,
-                submittedAt = x.User.CreatedAt,
-                verificationStatus = x.VerificationStatus,
-                // If you have documents in another table, include them here.
-               // documents = new [] { new { fileName = x.ProfileImage ?? "", url = x.ProfileImage ?? "" } }
-            })
-            .FirstOrDefaultAsync();
-
-        if (t == null) return NotFound(new { success = false, message = "Not found" });
-        return Ok(new { success = true, item = t });
-    }
-
-    // POST /api/admin/tech-requests/{id}/approve
-    [HttpPost("{technicianId:int}/approve")]
-    public async Task<IActionResult> Approve(int technicianId, [FromBody] ApproveRejectDto dto)
-    {
-        var tech = await _db.Technicians.Include(t => t.User).FirstOrDefaultAsync(t => t.TechnicianID == technicianId);
-        if (tech == null) return NotFound(new { success = false, message = "Technician not found" });
-
-        tech.VerificationStatus = "Verified";
-        tech.VerifiedAt = DateTime.UtcNow;
-        tech.User.Status = "Active";
-
-        await _db.SaveChangesAsync();
-
-        // optional: notify
-        try {
-            await _email.SendEmailAsync(tech.User.Email, "Application approved", $"Hello {tech.User.FullName}, your application has been approved. {dto?.comment ?? ""}");
-        } catch { /* ignore/log */ }
-
-        return Ok(new { success = true, message = "Approved" });
-    }
-
-    // POST /api/admin/tech-requests/{id}/reject
-    [HttpPost("{technicianId:int}/reject")]
-    public async Task<IActionResult> Reject(int technicianId, [FromBody] ApproveRejectDto dto)
-    {
-        var tech = await _db.Technicians.Include(t => t.User).FirstOrDefaultAsync(t => t.TechnicianID == technicianId);
-        if (tech == null) return NotFound(new { success = false, message = "Technician not found" });
-
-        tech.VerificationStatus = "Rejected";
-        tech.User.Status = "Inactive";
-
-        await _db.SaveChangesAsync();
-
-        try {
-            await _email.SendEmailAsync(tech.User.Email, "Application rejected", $"Hello {tech.User.FullName}, your application was rejected. Reason: {dto?.comment ?? "No reason provided."}");
-        } catch { /* ignore/log */ }
-
-        return Ok(new { success = true, message = "Rejected" });
-    }
-
-    public class ApproveRejectDto { public string? comment { get; set; } }
 }

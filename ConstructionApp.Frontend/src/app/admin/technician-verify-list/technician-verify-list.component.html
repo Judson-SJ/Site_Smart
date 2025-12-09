@@ -1,0 +1,45 @@
+<div class="page">
+  <h2>Pending Technician Verifications</h2>
+
+  <div *ngIf="statusMsg" class="msg">
+    {{ statusMsg }}
+  </div>
+
+  <div *ngIf="loading">Loading...</div>
+
+  <table *ngIf="!loading && technicians.length > 0" class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Technician</th>
+        <th>Contact</th>
+        <th>Experience</th>
+        <th>Docs</th>
+        <th>View</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let t of technicians; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ t.fullName }}</td>
+        <td>
+          <div>Email: {{ t.email }}</div>
+          <div>Phone: {{ t.phone }}</div>
+        </td>
+        <td>{{ t.experienceYears }} years</td>
+        <td>
+          <a *ngIf="t.idProof" [href]="t.idProof" target="_blank">ID</a>
+          |
+          <a *ngIf="t.certificate" [href]="t.certificate" target="_blank">Certificate</a>
+        </td>
+        <td>
+          <button (click)="openDetail(t)">Open</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && technicians.length === 0">
+    No pending technicians.
+  </div>
+</div>

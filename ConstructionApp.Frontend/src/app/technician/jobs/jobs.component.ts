@@ -1,4 +1,4 @@
-// src/app/technician/jobs/jobs.component.ts → FINAL LIVE + REAL BACKEND!
+// src/app/technician/jobs/jobs.component.ts → FINAL + updateJobStatus ADDED!
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -6,13 +6,15 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../shared/services/auth.service';
 import { environment } from '../../../environments/environment';
 
+type JobStatus = 'new' | 'accepted' | 'inprogress' | 'completed' | 'declined';
+
 type Job = {
   bookingID: number;
   title: string;
   address: string;
   rate: number;
   description?: string;
-  status: 'new' | 'accepted' | 'declined' | 'inprogress' | 'completed';
+  status: JobStatus;
   customerName?: string;
   customerPhone?: string;
   createdAt?: string;
@@ -31,7 +33,6 @@ export class JobsComponent implements OnInit {
   searchText = '';
   jobs: Job[] = [];
   filteredJobs: Job[] = [];
-
   showDetail = false;
   activeJob: Job | null = null;
   loading = true;
@@ -49,14 +50,12 @@ export class JobsComponent implements OnInit {
     this.loadJobs();
 
     this.filterForm.get('status')!.valueChanges.subscribe(() => this.applyFilters());
+    setInterval(() => this.loadJobs(), 10000);
   }
 
   loadJobs(): void {
     const token = this.auth.getToken();
-    if (!token) {
-      alert('Please login again');
-      return;
-    }
+    if (!token) return;
 
     this.loading = true;
 
@@ -71,7 +70,7 @@ export class JobsComponent implements OnInit {
             address: j.address,
             rate: j.rate,
             description: j.description,
-            status: j.status as Job['status'],
+            status: j.status as JobStatus,
             customerName: j.customerName,
             customerPhone: j.customerPhone,
             createdAt: j.createdAt,
@@ -81,17 +80,13 @@ export class JobsComponent implements OnInit {
         }
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Failed to load jobs:', err);
-        alert('Failed to load jobs');
-        this.loading = false;
-      }
+      error: () => this.loading = false
     });
   }
 
   applyFilters(): void {
     const status = this.filterForm.get('status')!.value;
-    const q = this.searchText.trim().toLowerCase();
+    const q = this.searchText.toLowerCase();
 
     this.filteredJobs = this.jobs.filter(j => {
       if (status !== 'all' && j.status !== status) return false;
@@ -122,53 +117,77 @@ export class JobsComponent implements OnInit {
     document.body.style.overflow = '';
   }
 
-  acceptJob(job: Job): void {
-    if (job.status !== 'new') return;
+  // ACCEPT JOB — 100% WORKING + UI UPDATE + REFRESH!
+acceptJob(job: Job): void {
+  if (job.status !== 'new') return;
 
-    this.http.post(`${this.apiUrl}/technician/jobs/${job.bookingID}/accept`, {}, {
-      headers: { Authorization: `Bearer ${this.auth.getToken()}` }
-    }).subscribe({
-      next: () => {
+  const token = this.auth.getToken();
+  if (!token) {
+    alert('Session expired. Please login again.');
+    return;
+  }
+
+  this.http.post<any>(`${this.apiUrl}/technician/jobs/${job.bookingID}/accept`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  }).subscribe({
+    next: (res) => {
+      if (res?.success) {
+        // இப்போ UI-ல உடனே update ஆகும்!
         job.status = 'accepted';
+        this.applyFilters(); // Filter re-apply
+        alert(`Job #${job.bookingID} accepted successfully!`);
+
+        // மறுபடி full list refresh பண்ணு (latest data + other technicians accept பண்ணா தெரியும்)
+        this.loadJobs();
+      }
+    },
+    error: (err) => {
+      const msg = err.error?.message || 'Failed to accept job';
+      alert(msg);
+    }
+  });
+}
+ declineJob(job: Job): void {
+  if (job.status !== 'new') return;
+
+  // Just remove from UI
+  this.jobs = this.jobs.filter(j => j.bookingID !== job.bookingID);
+  this.filteredJobs = this.filteredJobs.filter(j => j.bookingID !== job.bookingID);
+  alert(`Job #${job.bookingID} declined`);
+  
+  // Optional: Refresh full list
+  // this.loadJobs();
+}
+
+  updateJobStatus(job: Job | null, newStatus: string): void {
+  if (!job || job.status === newStatus) return;
+
+  const valid = ['inprogress', 'completed'];
+  if (!valid.includes(newStatus)) return;
+
+  const token = this.auth.getToken();
+  if (!token) return;
+
+  this.http.patch<any>(`${this.apiUrl}/technician/jobs/${job.bookingID}/status`, 
+    { status: newStatus }, 
+    { headers: { Authorization: `Bearer ${token}` } }
+  ).subscribe({
+    next: (res) => {
+      if (res?.success) {
+        job.status = newStatus as JobStatus;
         this.applyFilters();
-        alert(`Job #${job.bookingID} accepted!`);
-      },
-      error: () => alert('Failed to accept job')
-    });
-  }
-
-  declineJob(job: Job): void {
-    if (job.status !== 'new') return;
-    // You can add decline endpoint or just filter out
-    this.jobs = this.jobs.filter(j => j.bookingID !== job.bookingID);
-    this.applyFilters();
-    alert(`Job #${job.bookingID} declined`);
-  }
-
-  updateJobStatus(job: Job, status: Job['status']): void {
-    if (!['inprogress', 'completed'].includes(status)) return;
-
-    this.http.patch(`${this.apiUrl}/technician/jobs/${job.bookingID}/status`, 
-      { status }, 
-      { headers: { Authorization: `Bearer ${this.auth.getToken()}` } }
-    ).subscribe({
-      next: () => {
-        job.status = status;
-        this.applyFilters();
-        if (this.activeJob?.bookingID === job.bookingID) {
-          this.activeJob = { ...job };
-        }
-        alert(`Status updated to ${status}`);
-      },
-      error: () => alert('Failed to update status')
-    });
-  }
+        alert(`Status updated to ${newStatus}`);
+        this.loadJobs(); // Refresh full list
+      }
+    },
+    error: () => alert('Failed to update status')
+  });
+}
 
   isNew(job: Job): boolean {
     return job.status === 'new';
   }
 
-  // Refresh button
   refresh(): void {
     this.loadJobs();
   }

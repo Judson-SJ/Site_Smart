@@ -1,0 +1,56 @@
+<div class="page" *ngIf="technician; else loadingTpl">
+  <button class="back-btn" (click)="back()">← Back</button>
+
+  <h2>Technician Verification</h2>
+
+  <div *ngIf="statusMsg" class="msg">
+    {{ statusMsg }}
+  </div>
+
+  <div class="card">
+    <h3>{{ technician.fullName }}</h3>
+    <p><strong>Email:</strong> {{ technician.email }}</p>
+    <p><strong>Phone:</strong> {{ technician.phone }}</p>
+    <p><strong>Experience:</strong> {{ technician.experienceYears }} years</p>
+    <p><strong>Status:</strong> {{ technician.verificationStatus }}</p>
+
+    <h4>Address</h4>
+    <p *ngIf="technician.street || technician.city">
+      {{ technician.street }}, {{ technician.city }}, {{ technician.state }},
+      {{ technician.postalCode }}, {{ technician.country }}
+    </p>
+    <p *ngIf="!technician.street && !technician.city">
+      No address found.
+    </p>
+
+    <h4>Documents</h4>
+    <p>
+      <a *ngIf="technician.idProof" [href]="technician.idProof" target="_blank">ID Proof</a>
+      <span *ngIf="!technician.idProof">No ID Proof</span>
+    </p>
+    <p>
+      <a *ngIf="technician.certificate" [href]="technician.certificate" target="_blank">Certificate</a>
+      <span *ngIf="!technician.certificate">No Certificate</span>
+    </p>
+
+    <div class="actions">
+      <textarea
+        [(ngModel)]="reason"
+        placeholder="Reject reason (optional)"
+        rows="3"
+      ></textarea>
+
+      <div class="btn-row">
+        <button class="btn approve" (click)="approve()">Approve</button>
+        <button class="btn reject" (click)="reject()">Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="page">
+    <div *ngIf="loading">Loading technician...</div>
+    <div *ngIf="!loading && !technician && statusMsg">{{ statusMsg }}</div>
+  </div>
+</ng-template>

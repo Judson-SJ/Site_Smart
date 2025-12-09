@@ -1,4 +1,3 @@
-
 <!-- src/app/admin/users/admin-users.component.html -->
 <div class="users-page page-content">
   <div class="header-grid container">
@@ -43,8 +42,15 @@
         <div class="user-card" *ngFor="let u of users" (click)="openDetails(u)">
           <div class="card-top">
             <div class="avatar">
-              <span>{{ u.fullName.slice(0,1) }}</span>
+              <img
+                *ngIf="u.profileImage"
+                [src]="u.profileImage"
+                class="avatar-img" />
+              <span *ngIf="!u.profileImage">
+                {{ u.fullName.slice(0, 1) }}
+              </span>
             </div>
+
             <div class="meta">
               <h3 class="name">{{ u.fullName }}</h3>
               <div class="sub">{{ u.email }}</div>
@@ -61,14 +67,27 @@
               <div class="label">Joined</div>
               <div class="value">{{ fmt(u.createdAt) }}</div>
             </div>
+
+            <ng-container *ngIf="u.role === 'Customer' || u.role === 'Technician'">
+              <div class="row">
+                <div class="label">Phone</div>
+                <div class="value">{{ u.phone || '-' }}</div>
+              </div>
+              <div class="row address-row" *ngIf="u.address">
+                <div class="label">Address</div>
+                <div class="value address-value">{{ u.address }}</div>
+              </div>
+            </ng-container>
           </div>
         </div>
       </div>
 
       <div class="pager">
-        <button (click)="prevPage()" [disabled]="page<=1">Prev</button>
-        <div>Page {{page}} • {{ total }} users</div>
-        <button (click)="nextPage()" [disabled]="page*pageSize >= total">Next</button>
+        <button (click)="prevPage()" [disabled]="page <= 1">Prev</button>
+        <div>Page {{ page }} • {{ total }} users</div>
+        <button (click)="nextPage()" [disabled]="page * pageSize >= total">
+          Next
+        </button>
       </div>
     </div>
   </div>
@@ -83,7 +102,13 @@
       <div *ngIf="!detailLoading && selectedUser" class="detail-content">
         <div class="detail-header">
           <div class="avatar-large">
-            <span>{{ selectedUser.fullName.slice(0,1) }}</span>
+            <img
+              *ngIf="selectedUser.profileImage"
+              [src]="selectedUser.profileImage"
+              class="avatar-large-img" />
+            <span *ngIf="!selectedUser.profileImage">
+              {{ selectedUser.fullName.slice(0, 1) }}
+            </span>
           </div>
           <div>
             <h2>{{ selectedUser.fullName }}</h2>
@@ -94,25 +119,110 @@
 
         <div class="detail-section">
           <h4>Profile</h4>
-          <div class="field"><strong>Phone:</strong> {{ selectedUser.phone || '-' }}</div>
-          <div class="field"><strong>Status:</strong> {{ selectedUser.status || '-' }}</div>
-          <div class="field"><strong>Joined:</strong> {{ fmt(selectedUser.createdAt) }}</div>
-          <div class="field"><strong>Email verified:</strong> {{ selectedUser.emailConfirmed ? 'Yes' : 'No' }}</div>
+          <div class="field">
+            <strong>Phone:</strong> {{ selectedUser.phone || '-' }}
+          </div>
+          <div class="field">
+            <strong>Address:</strong> {{ selectedUser.address || '-' }}
+          </div>
+          <div class="field">
+            <strong>Status:</strong> {{ selectedUser.status || '-' }}
+          </div>
+          <div class="field">
+            <strong>Joined:</strong> {{ fmt(selectedUser.createdAt) }}
+          </div>
+          <div class="field">
+            <strong>Email verified:</strong>
+            {{ selectedUser.emailConfirmed ? 'Yes' : 'No' }}
+          </div>
         </div>
 
-        <div *ngIf="selectedUser.technician" class="detail-section">
+        <!-- Technician info & verification -->
+        <div *ngIf="selectedUser.technician as tech" class="detail-section">
           <h4>Technician Info</h4>
-          <div class="field"><strong>Verification:</strong> {{ selectedUser.technician.verificationStatus }}</div>
-          <div class="field"><strong>Experience:</strong> {{ selectedUser.technician.experienceYears ?? '-' }} yrs</div>
-          <div class="field"><strong>Rating:</strong> {{ selectedUser.technician.ratingAverage ?? '-' }}</div>
+
+          <div class="field">
+            <strong>Verification:</strong>
+            {{ tech.verificationStatus }}
+          </div>
+
+          <div class="field">
+            <strong>Experience:</strong>
+            {{ tech.experienceYears ?? '-' }} yrs
+          </div>
+
+          <div class="field">
+            <strong>Rating:</strong>
+            {{ tech.ratingAverage ?? '-' }}
+          </div>
+
+          <!-- DOCUMENT LINKS -->
+          <div
+            class="field"
+            *ngIf="$any(tech).idProof || $any(tech).certificate">
+            <strong>Documents:</strong>
+            <span>
+              <!-- ID Proof -->
+              <a *ngIf="$any(tech).idProof"
+                [href]="getDocUrl($any(tech).idProof)"
+                target="_blank">
+                View ID Proof
+              </a>
+
+              <span *ngIf="$any(tech).idProof && $any(tech).certificate">
+                &nbsp;|&nbsp;
+              </span>
+
+              <!-- Certificate -->
+              <a
+                *ngIf="$any(tech).certificate"
+                [href]="getDocUrl($any(tech).certificate)"
+                target="_blank">
+                View Certificate
+              </a>
+            </span>
+          </div>
+
+          <!-- Approve / Reject actions -->
+          <div *ngIf="technicianSelected" class="tech-actions">
+            <div *ngIf="techActionMsg" class="tech-msg">
+              {{ techActionMsg }}
+            </div>
+
+            <textarea
+              [(ngModel)]="rejectReason"
+              rows="3"
+              placeholder="Reject reason (optional)"></textarea>
+
+            <div class="btn-row">
+              <button
+                class="btn approve"
+                (click)="approveTechnician()
+                "
+                [disabled]="techActionLoading || !technicianHasDocs">
+                Approve
+              </button>
+
+              <button
+                class="btn reject"
+                (click)="rejectTechnician()"
+                [disabled]="techActionLoading">
+                Reject
+              </button>
+            </div>
+          </div>
         </div>
 
         <div *ngIf="selectedUser.admin" class="detail-section">
           <h4>Admin Info</h4>
-          <div class="field"><strong>Level:</strong> {{ selectedUser.admin.adminLevel }}</div>
-          <div class="field"><strong>Can manage users:</strong> {{ selectedUser.admin.canManageUsers ? 'Yes' : 'No' }}</div>
+          <div class="field">
+            <strong>Level:</strong> {{ selectedUser.admin.adminLevel }}
+          </div>
+          <div class="field">
+            <strong>Can manage users:</strong>
+            {{ selectedUser.admin.canManageUsers ? 'Yes' : 'No' }}
+          </div>
         </div>
-
       </div>
     </div>
   </div>

@@ -1,7 +1,7 @@
 // src/app/admin/layout/admin-layout.component.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIcon } from "@ng-icons/core";
 
 @Component({
@@ -11,4 +11,11 @@ import { NgIcon } from "@ng-icons/core";
   templateUrl: './admin.layout.html',
   styleUrls: ['./admin.layout.css']
 })
-export class AdminLayoutComponent {}
+export class AdminLayoutComponent {
+
+  constructor(private router: Router) {}   // ✅ inject Router
+
+  logout() {
+    this.router.navigate(['/admin-login']);      // ✅ Now works
+  }
+}

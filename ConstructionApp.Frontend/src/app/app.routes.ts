@@ -33,6 +33,10 @@ import { BookingComponent } from './customer/booking/booking.component';
 // Technician
 import { TechnicianVerifyDocComponent } from './technician/verify/technician-verify-doc.component';
 import { TechnicianLoginComponent } from './auth/technician-login/technician-login.component';
+import { AdminNotificationsComponent } from './admin/notifications/admin-notifications.component';
+import { CustomerNotificationsComponent } from './customer/notifications/customer-notifications.component';
+import { TechnicianVerifyListComponent } from './admin/technician-verify-list/technician-verify-list.component';
+import { TechnicianVerifyDetailComponent } from './admin/technician-verify-detail/technician-verify-detail.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -65,6 +69,9 @@ export const routes: Routes = [
       { path: 'service', component: ServicesManagementComponent },
       { path: 'users', component: AdminUsersComponent },
       { path: 'booking', component: AdminBookingsComponent },
+      { path: 'notifications', component: AdminNotificationsComponent},
+      { path: 'technicians', component: TechnicianVerifyListComponent },
+      { path: 'technicians/:id', component: TechnicianVerifyDetailComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
@@ -77,6 +84,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: CustomerDashboardComponent },
       { path: 'booking', component: BookingComponent },
       { path: 'profile', component: ProfileComponent },
+      { path: 'notifications', component: CustomerNotificationsComponent},
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

@@ -1,47 +1,43 @@
-/* src/app/customer/booking/booking.component.css */
-/* SUPER CLEAN, MINIMAL & PROFESSIONAL - NO DISTRACTING ANIMATIONS */
+/* src/app/customer/booking/booking.component.css 
+   PURE BLACK + NO ANIMATION + DASHBOARD SAME PREMIUM + FULLY RESPONSIVE */
 
 .booking-wrapper {
   min-height: 100vh;
-  background: #000;
+  background: #000000;                    /* PURE BLACK — No gradient */
+  color: #e0d4ff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-.particles-bg {
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(120, 119, 198, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.12) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Subtle static dots - no animation */
+/* FULLY REMOVE ALL PARTICLES & ANIMATION */
+.particles-bg,
+.particles-bg::before,
 .particles-bg::after {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="1.5" fill="%23cccccc" opacity="0.6"/></svg>');
-  background-size: 80px;
-  opacity: 0.06;
+  display: none !important;
+}
+
+/* Main Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
 }
 
 /* Page Title */
 .page-title {
-  font-size: 4.5rem;
+  font-size: clamp(3rem, 8vw, 4.5rem);
   font-weight: 900;
   text-align: center;
   background: linear-gradient(90deg, #c4b5fd, #8b5cf6);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 1rem;
+  margin: 20px 0 40px;
+  letter-spacing: -1px;
 }
 
-/* Service Cards - Clean Hover Only */
+/* Service Cards */
 .service-card {
   background: rgba(20, 20, 50, 0.85);
   backdrop-filter: blur(20px);
@@ -66,7 +62,6 @@
   box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
 }
 
-/* Selected Checkmark - Static & Clean */
 .selected-check {
   position: absolute;
   top: 16px;
@@ -83,7 +78,6 @@
   box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
 }
 
-/* Price Tag */
 .price-tag {
   font-size: 2.4rem;
   font-weight: 900;
@@ -93,9 +87,9 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Glass Cards - Calendar & Time */
+/* Glass Cards */
 .glass-card {
-  background: rgba(20, 20, 50, 0.8);
+  background: rgba(20, 20, 50, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 28px;
@@ -165,7 +159,7 @@
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
 }
 
-/* Buttons - Clean & Strong */
+/* Buttons */
 .next-btn,
 .confirm-btn {
   padding: 20px 60px;
@@ -190,21 +184,6 @@
 .confirm-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-}
-
-/* Cart Item Buttons (Trash, Plus, Minus) */
-button[w-12] i,
-button[w-16] i {
-  transition: all 0.3s ease;
-}
-
-button[w-12]:hover i {
-  transform: scale(1.2);
-}
-
-button[w-16]:hover i {
-  transform: scale(1.15);
 }
 
 /* Responsive */

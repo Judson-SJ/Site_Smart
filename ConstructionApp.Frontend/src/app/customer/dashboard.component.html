@@ -25,7 +25,9 @@
         <i class="fas fa-question-circle"></i> Help
       </a>
       <div class="flex gap-4">
-        <button (click)="logout()" class="logout-btn px-6 py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-xl transition">
+        <button
+          (click)="logout()"
+          class="logout-btn px-6 py-3 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-xl transition">
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>
@@ -33,8 +35,10 @@
 
     <!-- User Info in Sidebar -->
     <div class="user-info">
-      <img [src]="userAvatar || 'https://ui-avatars.com/api/?name=' + userName + '&background=8b5cf6&color=fff&bold=true&size=128'"
-           alt="User Avatar" class="user-avatar rounded-full object-cover">
+      <img
+        [src]="userAvatar || 'https://ui-avatars.com/api/?name=' + userName + '&background=8b5cf6&color=fff&bold=true&size=128'"
+        alt="User Avatar"
+        class="user-avatar rounded-full object-cover">
       <div class="user-details">
         <div class="user-name font-bold text-white">{{ userName }}</div>
         <div class="user-email text-sm text-gray-400">{{ userEmail }}</div>
@@ -48,10 +52,13 @@
     <!-- Page Header -->
     <header class="page-header">
       <div>
-        <h1 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-[#c4b5fd] to-[#8b5cf6] bg-clip-text text-transparent">
+        <h1
+          class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-[#c4b5fd] to-[#8b5cf6] bg-clip-text text-transparent">
           Welcome back, {{ userName }}!
         </h1>
-        <p class="text-xl text-gray-400 mt-3">Here's what's happening with your projects today.</p>
+        <p class="text-xl text-gray-400 mt-3">
+          Here's what's happening with your projects today.
+        </p>
       </div>
     </header>
 
@@ -64,46 +71,59 @@
           <div>
             <h3 class="text-4xl font-bold text-white">{{ currentBooking.serviceName }}</h3>
             <p class="text-xl text-gray-300 mt-2">
-              <i class="fas fa-calendar-alt text-[#8b5cf6]"></i> {{ currentBooking.scheduledDate }}
+              <i class="fas fa-calendar-alt text-[#8b5cf6]"></i>
+              {{ currentBooking.scheduledDate }}
             </p>
           </div>
-          <div class="status-badge text-lg px-6 py-3 rounded-full font-bold"
-               [ngClass]="getStatusClass(currentBooking.status)">
+          <div
+            class="status-badge text-lg px-6 py-3 rounded-full font-bold"
+            [ngClass]="getStatusClass(currentBooking.status)">
             {{ currentBooking.status }}
           </div>
         </div>
 
         <!-- Progress Bar -->
-        <div class="mb-8">
-          <div class="flex justify-between text-sm mb-2">
-            <span class="text-gray-400">Project Progress</span>
-            <span class="text-[#8b5cf6] font-bold">{{ currentBooking.progress }}% Complete</span>
-          </div>
-          <div class="progress-container">
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="currentBooking.progress"></div>
-            </div>
+      <div class="px-8 py-8">
+        <div class="flex justify-between items-center mb-4 text-sm">
+          <span class="text-gray-400">Step {{ getProgressStep(currentBooking.status) }} of 4. Your project is currently underway</span>
+          <span class="text-purple-400 font-bold text-xl">{{ currentBooking.progress }}%</span>
+        </div>
+        
+        <div class="w-full bg-gray-800 rounded-full h-5 overflow-hidden shadow-inner">
+          <div class="h-full bg-gradient-to-r from-purple-600 via-purple-500 to-purple-400 rounded-full transition-all duration-1000 ease-out"
+               [style.width.%]="currentBooking.progress">
           </div>
         </div>
 
+        <div class="flex justify-between mt-4 text-sm text-gray-500">
+          <span>Requested</span>
+          <span>Accepted</span>
+          <span>In-Progress</span>
+          <span class="text-purple-400 font-bold">Completed</span>
+        </div>
+      </div>
+
         <!-- Technician Info -->
         <div class="technician-info flex items-center gap-6 mb-8 p-6 bg-white/5 rounded-2xl">
-          <img [src]="currentBooking.technicianPhoto || 'https://randomuser.me/api/portraits/men/45.jpg'"
-               alt="Technician" class="w-20 h-20 rounded-full object-cover border-4 border-[#8b5cf6]/50">
+          <img
+            [src]="currentBooking.technicianPhoto "
+            alt="Technician"
+            class="w-20 h-20 rounded-full object-cover border-4 border-[#8b5cf6]/50">
           <div>
-            <div class="text-2xl font-bold text-white">{{ currentBooking.technicianName }}</div>
-            <div class="text-gray-400">Assigned Technician</div>
+            <div class="text-2xl font-bold text-white">
+              {{ currentBooking.technicianName }}
+            </div>
+            <div class="text-gray-400">
+              Assigned Technician
+            </div>
           </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="flex gap-6 justify-center">
-          <button (click)="contactTechnician()"
-                  class="btn-primary px-10 py-5 text-xl rounded-xl flex items-center gap-3 transform hover:scale-105 transition">
-            <i class="fas fa-comment-dots"></i> Chat with Technician
-          </button>
-          <button (click)="viewDetails(currentBooking.bookingID)"
-                  class="btn-secondary px-10 py-5 text-xl rounded-xl flex items-center gap-3 transform hover:scale-105 transition">
+          <button
+            (click)="viewDetails(currentBooking.bookingID)"
+            class="btn-secondary px-10 py-5 text-xl rounded-xl flex items-center gap-3 transform hover:scale-105 transition">
             <i class="fas fa-eye"></i> View Full Details
           </button>
         </div>
@@ -117,15 +137,18 @@
           <i class="fas fa-hard-hat"></i>
         </div>
         <h3 class="text-4xl font-bold text-white mb-4">No Active Projects</h3>
-        <p class="text-xl text-gray-400 mb-10">Ready to start your next construction journey?</p>
-        <a routerLink="/customer/booking"
-           class="purple-btn text-2xl px-12 py-6 inline-flex items-center gap-4 transform hover:scale-110 transition">
+        <p class="text-xl text-gray-400 mb-10">
+          Ready to start your next construction journey?
+        </p>
+        <a
+          routerLink="/customer/booking"
+          class="purple-btn text-2xl px-12 py-6 inline-flex items-center gap-4 transform hover:scale-110 transition">
           <i class="fas fa-plus-circle"></i> Book a New Service
         </a>
       </div>
     </ng-template>
 
-    <!-- Booking History Table — 100% PERFECT ALIGNMENT + RESPONSIVE! -->
+    <!-- Booking History Table -->
     <div class="table-container glass rounded-3xl overflow-hidden mt-8">
       <div class="overflow-x-auto">
         <table class="history-table w-full min-w-[800px]">
@@ -134,23 +157,30 @@
               <th class="px-8 py-6 text-lg font-bold text-white">Service</th>
               <th class="px-8 py-6 text-lg font-bold text-white">Date</th>
               <th class="px-8 py-6 text-lg font-bold text-white">Technician</th>
-              <th class="px-8 py-6 text-lg font-bold text-white text-right">Amount</th>
-              <th class="px-8 py-6 text-lg font-bold text-white text-center">Status</th>
+              <th class="px-8 py-6 text-lg font-bold text-white text-right">
+                Amount
+              </th>
+              <th class="px-8 py-6 text-lg font-bold text-white text-center">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of bookingHistory"
-                class="border-b border-white/10 hover:bg-white/5 transition cursor-pointer"
-                (click)="viewDetails(b.bookingID)">
-
+            <tr *ngFor="let b of bookingHistory" 
+              class="border-t border-gray-800 hover:bg-gray-800/50 transition cursor-pointer"
+              (click)="selectAsCurrent(b)">
+  
               <!-- Service Name -->
               <td class="px-8 py-6">
                 <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#a78bfa] rounded-xl flex items-center justify-center">
+                  <div
+                    class="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#a78bfa] rounded-xl flex items-center justify-center">
                     <i class="fas fa-tools text-white text-xl"></i>
                   </div>
                   <div>
-                    <div class="font-bold text-white text-lg">{{ b.serviceName }}</div>
+                    <div class="font-bold text-white text-lg">
+                      {{ b.serviceName }}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -166,24 +196,28 @@
               <!-- Technician -->
               <td class="px-8 py-6">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
-                    {{ b.technicianName.charAt(0) }}
+                  <div
+                    class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
+                    {{ (b.technicianName || 'P').charAt(0) }}
                   </div>
-                  <span class="text-white font-medium">{{ b.technicianName }}</span>
+                  <span class="text-white font-medium">
+                    {{ b.technicianName || 'Pending Assignment' }}
+                  </span>
                 </div>
               </td>
 
               <!-- Amount — Right Aligned -->
               <td class="px-8 py-6 text-right">
                 <span class="text-2xl font-bold text-[#8b5cf6]">
-                  Rs. {{ b.price | number:'1.0-0' }}
+                  Rs. {{ b.price | number: '1.0-0' }}
                 </span>
               </td>
 
               <!-- Status Badge — Center -->
               <td class="px-8 py-6 text-center">
-                <span class="status-badge px-6 py-3 rounded-full text-sm font-bold inline-block min-w-[120px]"
-                      [ngClass]="getStatusClass(b.status)">
+                <span
+                  class="status-badge px-6 py-3 rounded-full text-sm font-bold inline-block min-w-[120px]"
+                  [ngClass]="getStatusClass(b.status)">
                   {{ b.status }}
                 </span>
               </td>
@@ -193,7 +227,9 @@
       </div>
 
       <!-- No History Message -->
-      <div *ngIf="bookingHistory.length === 0" class="text-center py-20 text-gray-400">
+      <div
+        *ngIf="bookingHistory.length === 0"
+        class="text-center py-20 text-gray-400">
         <i class="fas fa-history text-8xl mb-6 opacity-50"></i>
         <p class="text-2xl">No booking history yet</p>
       </div>

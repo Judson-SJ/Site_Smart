@@ -29,8 +29,13 @@
 
       <div class="job-actions">
         <button class="btn small" (click)="openDetail(job)">View</button>
-        <button class="btn accept" (click)="acceptJob(job)" [disabled]="job.status === 'accepted'">Accept</button>
-        <button class="btn decline" (click)="declineJob(job)" [disabled]="job.status === 'declined'">Decline</button>
+        <button class="btn accept" 
+        (click)="acceptJob(job)" 
+        [disabled]="job.status !== 'new'">Accept</button>
+
+        <button class="btn decline" 
+                (click)="declineJob(job)" 
+                [disabled]="job.status !== 'new'">Decline</button>
       </div>
     </div>
 
