@@ -1,0 +1,181 @@
+<div class="min-h-screen bg-black text-white overflow-x-hidden">
+<!-- NAVBAR — இதை exact-ஆ paste பண்ணு (Home page-ல மட்டும்) -->
+<header class="logo-row">
+  <div class="container flex justify-between items-center py-5 px-6">
+    <a routerLink="/home" class="logo text-3xl font-black">
+      Site Smart
+    </a>
+
+    <nav class="top-links">
+      <a routerLink="/home" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{exact: true}">
+        Home
+      </a>
+      <a routerLink="/about" routerLinkActive="active">
+        About Us
+      </a>
+      <a routerLink="/login" class="login-btn">
+        Login
+      </a>
+    </nav>
+  </div>
+</header>
+
+  <!-- Hero Section -->
+ <section class="py-20 bg-gradient-to-b from-black to-purple-950/20">
+    <div class="container text-center relative z-10">
+      <h1 class="hero-title">
+        About <span>Site Smart</span>
+      </h1>
+      <p class="hero-sub">
+        Sri Lanka's #1 Trusted Platform for Construction & Home Services
+      </p>
+      <div class="stats-grid mt-16">
+        <div class="stat-item">
+          <h3>1000+</h3>
+          <p>Happy Customers</p>
+        </div>
+        <div class="stat-item">
+          <h3>300+</h3>
+          <p>Verified Technicians</p>
+        </div>
+        <div class="stat-item">
+          <h3>100+</h3>
+          <p>Jobs Completed</p>
+        </div>
+        <div class="stat-item">
+          <h3>4.9</h3>
+          <p>Average Rating</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+ <!-- OUR STORY — NEW & EMOTIONAL VERSION (2025 Style) -->
+<section class="py-20 bg-gradient-to-b from-black to-purple-950/20">
+  <div class="container max-w-6xl mx-auto">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      
+      <!-- Text Content -->
+      <div class="order-2 lg:order-1">
+        <h2 class="text-5xl md:text-6xl font-black mb-12">
+          <span class="bg-gradient-to-r from-purple-400 to-purple-400 bg-clip-text text-transparent">
+            Our Story
+          </span>
+        </h2>
+
+        <div class="space-y-8 text-lg text-gray-200 leading-relaxed">
+          <p>
+            Our story began with a simple observation: <strong>finding reliable construction workers is still a major challenge</strong> for many people in Sri Lanka.
+          </p>
+          <p>
+            Customers struggle with <strong>inconsistent pricing</strong>, <strong>lack of transparency</strong>, and <strong>difficulty locating trusted technicians</strong>. 
+            At the same time, talented construction workers do not receive steady job opportunities and often depend on offline methods or middlemen.
+          </p>
+          <p>
+            After speaking with constructors and several technicians in Jaffna, we clearly understood the real pain on both sides. 
+            That was the moment we realized — <strong>there was a huge gap in the construction industry.</strong>
+          </p>
+          <p class="text-xl font-semibold text-purple-300">
+            We asked ourselves a simple question:<br>
+            <span class="text-2xl text-white">“If food delivery and ride booking have digital platforms, why not construction services?”</span>
+          </p>
+          <p>
+            This question sparked the creation of <strong>Site Smart</strong> — a dedicated construction service marketplace designed to bring 
+            <span class="text-purple-300 font-bold">fairness, transparency, and convenience</span> to both customers and technicians across Sri Lanka.
+          </p>
+          <p class="text-xl text-purple-400 font-medium mt-10">
+            Today, we proudly connect thousands of homes with verified professionals — from Mannar to Jaffna.
+          </p>
+        </div>
+      </div>
+
+      <!-- Image / Visual -->
+      <div class="order-1 lg:order-2 text-center">
+        <div class="relative">
+          <div class="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent rounded-3xl blur-3xl"></div>
+          <img 
+            src="assets/images/site-smart-team.jpg" 
+            alt="Site Smart Team - Real People, Real Mission" 
+            class="rounded-3xl shadow-2xl w-full max-w-2xl mx-auto border-4 border-purple-600/40 relative z-10 hover:scale-105 transition-transform duration-700">
+          <div class="mt-6 text-purple-300 font-medium">
+            Our team — passionate about changing lives through better homes
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <!-- Mission & Vision -->
+  <section class="py-20 bg-gradient-to-b from-black to-purple-950/20">
+    <div class="container">
+      <div class="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+        <div class="mission-card">
+          <div class="icon-glow">
+            <i class="fas fa-bullseye text-5xl"></i>
+          </div>
+          <h3>Our Mission</h3>
+          <p>
+            To empower every Sri Lankan homeowner with access to reliable, affordable, and high-quality construction and home services — with zero stress.
+          </p>
+        </div>
+        <div class="mission-card">
+          <div class="icon-glow">
+            <i class="fas fa-eye text-5xl"></i>
+          </div>
+          <h3>Our Vision</h3>
+          <p>
+            To be the most trusted and loved home service platform in Sri Lanka by 2027, serving 1 million happy homes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values -->
+  <section class="py-20 px-6">
+    <div class="container">
+      <h2 class="text-center section-title">Our Values</h2>
+      <div class="grid md:grid-cols-3 gap-10 mt-16">
+        <div class="value-card">
+          <i class="fas fa-shield-alt text-6xl text-purple-400 mb-6"></i>
+          <h4>Trust & Safety</h4>
+          <p>Every professional is verified, rated, and background-checked</p>
+        </div>
+        <div class="value-card">
+          <i class="fas fa-clock text-6xl text-purple-400 mb-6"></i>
+          <h4>On Time, Every Time</h4>
+          <p>No more waiting. Get service when YOU need it</p>
+        </div>
+        <div class="value-card">
+          <i class="fas fa-laptop-code text-6xl text-purple-400 mb-6"></i>
+          <h4>Technology First</h4>
+          <p>Smart matching, live tracking and digital payments</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team CTA -->
+  <section class="py-20 bg-gradient-to-b from-black to-purple-950/20">
+    <div class="container text-center">
+      <h2 class="text-4xl md:text-5xl font-bold mb-8">
+        Join Sri Lanka's Fastest Growing<br>Construction Service Revolution
+      </h2>
+      <div class="flex flex-col sm:flex-row gap-6 justify-center mt-10">
+        <a routerLink="/register" class="cta-btn-lg">
+          Join as Customer
+        </a>
+        <a routerLink="/technician/register" class="cta-btn-outline">
+          Become a Technician
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer (same as home) -->
+  <footer class="footer">
+    <!-- Your existing footer code here -->
+  </footer>
+</div>

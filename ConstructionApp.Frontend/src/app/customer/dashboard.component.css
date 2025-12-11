@@ -80,41 +80,94 @@
   box-shadow: 0 0 20px rgba(138, 91, 255, 0.4);
   border: 1px solid rgba(138, 91, 255, 0.3);
 }
-
-/* User Info — Compact & Clean */
+/* USER INFO — SUPER CLEAN + MODERN + COMPACT + PREMIUM */
 .user-info {
   margin-top: auto;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, 
-              rgba(139, 92, 246, 0.25) 0%, 
-              rgba(124, 58, 237, 0.15) 100%);
+  padding: 4px 12px;
+  background: rgba(20, 20, 40, 0.7);
   border-radius: 20px;
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+  border: 1.5px solid rgba(139, 92, 246, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle inner glow */
+.user-info::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent);
+}
+
+/* Hover effect */
+.user-info:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.7);
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(139, 92, 246, 0.3);
+}
+
+/* Avatar */
+.user-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #8b5cf6;
+  box-shadow: 
+    0 0 20px rgba(139, 92, 246, 0.6),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
   transition: all 0.4s ease;
 }
 
-.user-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 3px solid #b67aff;
-  box-shadow: 0 0 20px rgba(182, 122, 255, 0.5);
+.user-info:hover .user-avatar {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
+}
+
+/* User Details */
+.user-details {
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .user-name {
+  font-size: 1.1rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 0 10px rgba(255,255,255,0.3);
+  color: #ffffff;
+  margin-bottom: 4px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .user-email {
   font-size: 0.85rem;
+  color: #c4b5fd;
   opacity: 0.9;
-  color: #d0b8ff;
+  font-weight: 500;
 }
 
+/* Role Badge (Optional for Technician) */
+.role-badge {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  background: rgba(139, 92, 246, 0.25);
+  color: #e0d4ff;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  align-self: flex-start;
+  margin-top: 6px;
+}
 /* Main Content */
 .main-content {
   margin-left: 280px;

@@ -1,113 +1,175 @@
-<body>
-<div class="hero">
-  <div class="container hero-inner">
-    <div class="logo-row">
-      <div class="logo">Site Smart</div>
-      <nav class="top-links">
-        <a routerLink="/home">Home</a>
-        <a routerLink="/about us">About Us</a>
-        <a routerLink="/contact">Contact</a>
-     
-      </nav>
+<div class="min-h-screen bg-black text-white">
+
+ <!-- NAVBAR — இதை exact-ஆ paste பண்ணு (Home page-ல மட்டும்) -->
+<header class="logo-row">
+  <div class="container flex justify-between items-center py-5 px-6">
+    <a routerLink="/home" class="logo text-3xl font-black">
+      Site Smart
+    </a>
+
+    <nav class="top-links">
+      <a routerLink="/home" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{exact: true}">
+        Home
+      </a>
+      <a routerLink="/about" routerLinkActive="active">
+        About Us
+      </a>
+      <a routerLink="/login" class="login-btn">
+        Login
+      </a>
+    </nav>
+  </div>
+</header>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container text-center">
+      <h1 class="hero-title">
+        Professional Construction<br>
+        <span>Services, On Demand</span>
+      </h1>
+      <p class="hero-sub">
+        Get instant access to verified electricians, plumbers, painters,<br>
+        carpenters and more. Book trusted professionals in minutes!
+      </p>
+      <button class="cta-btn" (click)="goToServices()">
+        Find Your Services
+      </button>
     </div>
+  </section>
 
-    <h1 class="hero-title">
-      Professional Construction
-      <br /><span>Services, On Demand</span>
-    </h1>
-
-    <p class="hero-sub">Get instant access to verified electricians, plumbers, painters, carpenters and more. Book trusted professionals in minutes!</p>
-
-  </div></div>
-
-<section class="container section services-section">
-  <h2 class="section-title">Our Categories</h2>
-
-  <div class="categories-grid" role="list">
-    <div *ngFor="let c of categories" class="category-card" (click)="selectCategory(c)">
-      <div class="icon-box" [attr.title]="c.categoryName">
-        <i [ngClass]="c.icon"></i>
+  <!-- Categories -->
+  <section class="py-20 px-6">
+    <div class="container">
+      <h2 class="text-center text-4xl font-bold mb-12 text-purple-300">
+        Our Categories
+      </h2>
+      <div class="categories-grid">
+        <div *ngFor="let c of categories" 
+             class="cat-card" 
+             (click)="selectCategory(c)">
+          <div class="icon-circle">
+            <i [ngClass]="c.icon"></i>
+          </div>
+          <h3>{{ c.categoryName }}</h3>
+        </div>
       </div>
-      <h3>{{ c.categoryName }}</h3>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="container section how-it-works">
-  <h2 class="section-title">How It Works</h2>
-  <div class="steps">
-    <div class="step">
-      <div class="step-number">1</div>
-      <h3>Describe Your Project</h3>
-      <p>Tell us what you need — big or small</p>
-    </div>
-    <div class="step">
-      <div class="step-number">2</div>
-      <h3>Get Matched</h3>
-      <p>We connect you with verified professionals</p>
-    </div>
-    <div class="step">
-      <div class="step-number">3</div>
-      <h3>Job Done</h3>
-      <p>Sit back and relax — your work gets done!</p>
-    </div>
-  </div>
-</section>
+  <!-- HOW IT WORKS — CUTE + GLOWING + ANIMATED + PREMIUM -->
+<section class="how-section">
+  <div class="container relative">
+    
+    <!-- Title -->
+    <h2 class="text-center text-5xl md:text-6xl font-black mb-20">
+      <span class="bg-gradient-to-r from-purple-400 via-purple-400 to-purple-600 bg-clip-text text-transparent">
+        How It Works
+      </span>
+    </h2>
 
-<section class="container section testimonials">
-  <h2 class="section-title">What Our Clients Say</h2>
-  <div class="testimonials-grid">
-    <div class="testimonial-card">
-      <p>"Best service! My plumbing issue was fixed in 2 hours. Highly recommend!"</p>
-      <strong>- Saravanan P, Mannar</strong>
-    </div>
-    <div class="testimonial-card">
-      <p>"Professional painters, neat work, on-time completion. 10/10!"</p>
-      <strong>- Priya M, Jaffna</strong>
-    </div>
-    <div class="testimonial-card">
-      <p>"Electrical wiring done perfectly. Very satisfied!"</p>
-      <strong>- Rajesh K, Mannar</strong>
-    </div>
-  </div>
-</section>
-
-<footer class="site-footer">
-  <div class="site-footer-top container">
-    <div class="footer-col footer-brand">
-      <div class="logo-small">ConstructPro</div>
-      <p class="brand-desc">Quality construction services, simplified.</p>
-    </div>
-    <div class="footer-col footer-links-col">
-      <h4 class="col-title">Quick Links</h4>
-      <ul class="col-list">
-        <li><a routerLink="/home">Home</a></li>
-        <li><a routerLink="/services">Services</a></li>
-        <li><a routerLink="/about">About Us</a></li>
-        <li><a routerLink="/contact">Contact</a></li>
-      </ul>
-    </div>
-    <div class="footer-col footer-legal-col">
-      <h4 class="col-title">Legal</h4>
-      <ul class="col-list">
-        <li><a href="#">Privacy Policy</a></li>
-        <li><a href="#">Terms of Service</a></li>
-      </ul>
-    </div>
-    <!-- <div class="footer-col footer-follow-col">
-      <h4 class="col-title">Follow Us</h4>
-      <div class="social-row">
-        <a class="social-icon" href="#" aria-label="facebook">f</a>
-        <a class="social-icon" href="#" aria-label="twitter">t</a>
-        <a class="social-icon" href="#" aria-label="github">g</a>
+    <!-- Steps Grid -->
+    <div class="steps-grid">
+      
+      <!-- Step 1 -->
+      <div class="step-card group">
+        <div class="step-num step-1">
+          <span>1</span>
+        </div>
+        <h3 class="text-2xl md:text-3xl font-bold text-white mt-8 mb-4">
+          Describe Your Project
+        </h3>
+        <p class="text-gray-300 text-lg leading-relaxed">
+          Tell us what you need — big or small
+        </p>
       </div>
-    </div> -->
-  </div>
 
-  <div class="site-footer-bottom">
-    <div class="container copyright">
-      © 2025 ConstructPro. All Rights Reserved.
+      <!-- Step 2 -->
+      <div class="step-card group">
+        <div class="step-num step-2">
+          <span>2</span>
+        </div>
+        <h3 class="text-2xl md:text-3xl font-bold text-white mt-8 mb-4">
+          Get Matched
+        </h3>
+        <p class="text-gray-300 text-lg leading-relaxed">
+          We connect you with verified professionals
+        </p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card group">
+        <div class="step-num step-3">
+          <span>3</span>
+        </div>
+        <h3 class="text-2xl md:text-3xl font-bold text-white mt-8 mb-4">
+          Job Done
+        </h3>
+        <p class="text-gray-300 text-lg leading-relaxed">
+          Sit back and relax — your work gets done!
+        </p>
+      </div>
+
     </div>
   </div>
-</footer>
-</body>
+</section>
+  <!-- Footer -->
+   
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="logo-circle">S</div>
+        <h3>Site Smart</h3>
+        <p>Sri Lanka's #1 Construction & Home Service Platform</p>
+      </div>
+      <!-- CONTACT US + FOLLOW US — REAL DETAILS + CLICKABLE -->
+      <div class="footer-links">
+        <h4 class="text-xl font-bold text-purple-300 mb-5">Contact Us</h4>
+        <ul class="space-y-4 text-left">
+          <li class="flex items-center gap-3 justify-center md:justify-start">
+            <i class="fas fa-envelope text-purple-400"></i>
+            <a href="mailto:support@sitesmart.lk" class="hover:text-purple-300 transition">
+              support@sitesmart.lk
+            </a>
+          </li>
+          <li class="flex items-center gap-3 justify-center md:justify-start">
+            <i class="fas fa-phone text-purple-400"></i>
+            <a href="tel:+94771234567" class="hover:text-purple-300 transition">
+              +94 77 123 4567
+            </a>
+          </li>
+          <li class="flex items-center gap-3 justify-center md:justify-start">
+            <i class="fas fa-map-marker-alt text-purple-400"></i>
+            <span>No. 45, Main Street, Jaffna, Sri Lanka</span>
+          </li>
+          <li class="flex items-center gap-3 justify-center md:justify-start">
+            <i class="fas fa-clock text-purple-400"></i>
+            <span>Mon–Sat: 8:00 AM – 6:00 PM</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4 class="text-xl font-bold text-purple-300 mb-5">Follow Us</h4>
+        <div class="social-row">
+          <a href="https://facebook.com/sitesmartlk" target="_blank" class="social-btn" aria-label="Facebook">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="https://instagram.com/sitesmart.lk" target="_blank" class="social-btn" aria-label="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="https://wa.me/94771234567" target="_blank" class="social-btn" aria-label="WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+          </a>
+          <a href="https://linkedin.com/company/sitesmart" target="_blank" class="social-btn" aria-label="LinkedIn">
+            <i class="fab fa-linkedin-in"></i>
+          </a>
+        </div>
+      </div>
+  <footer>
+    <div class="footer-bottom">
+      <p>© 2025 Site Smart. All rights reserved. Made with <span class="heart">❤️</span> in Sri Lanka</p>
+    </div>
+  </footer>
+</div>

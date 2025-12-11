@@ -37,10 +37,12 @@ import { AdminNotificationsComponent } from './admin/notifications/admin-notific
 import { CustomerNotificationsComponent } from './customer/notifications/customer-notifications.component';
 import { TechnicianVerifyListComponent } from './admin/technician-verify-list/technician-verify-list.component';
 import { TechnicianVerifyDetailComponent } from './admin/technician-verify-detail/technician-verify-detail.component';
+import { AboutUsComponent } from './home/about-us.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'home', component: HomeComponent },
+  { path: 'about', component: AboutUsComponent },
 
   // Public services catalog
   { path: 'services', component: ServicesCatalogComponent },
